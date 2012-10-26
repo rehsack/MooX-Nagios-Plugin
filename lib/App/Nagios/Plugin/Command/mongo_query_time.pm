@@ -4,21 +4,42 @@ use v5.14;
 use strictures;
 use Moose;
 
-# extends qw(CLI::App::Perf::Index::Command);
 extends qw(MooseX::App::Cmd::Command);
-#with 'CLI::App::Perf::Index::Role::AutoHelp', 'CLI::App::Perf::Index::Role::ServiceDB',
-#  'MooseX::SimpleConfig',
-# 'CLI::App::Perf::Index::Role::FindConfigFile';
 
 with qw(MooseX::Nagios::Plugin::Fetch::BySnmp MooseX::Nagios::Plugin::Approve::WarnCrit),
   qw(MooseX::Nagios::Plugin);
 
-# ABSTRACT: import new performance data for service
+# ABSTRACT: plugin to check query time of snmpd plugin for mongodb
+
+=method description
+
+Returns plugin's short description for building help/usage page by L<App::Cmd>.
+
+=cut
 
 sub description
 {
     "Checking query time of snmpd plugin for mongodb";
 }
+
+=method fetch
+
+Fetches the query time from smart-snmpd plugin for mongodb.
+
+Mib below C<.1.3.6.1.4.1.36539.20.$plugin_id.100>:
+
+    QUERYTIME		.99	STRUCT
+    QUERYTIME.USER	.99.1	UINT64
+    QUERYTIME.SYSTEM	.99.2	UINT64
+    QUERYTIME.WALL	.99.3	UINT64
+
+Returns the overall query time for fetching all plugin delivered values
+in seconds and the overall querytime, warn threshold and crit threshold
+as I<querytime> performance data.
+
+TODO: update warn/crit being time-threshold
+
+=cut
 
 sub fetch
 {
@@ -45,13 +66,4 @@ sub fetch
     return \@values;
 }
 
-# nagios check | W | C |
-# check connection | 1s | 2s |
-# replication lag | 15s | 30s |
-# replset status | 0,3,5 | 4,6,8 | OK = 1,2,7
-# % open connections| 70% | 80% |
-# % lock time | 5% | 10% |
-# queries per second| 256 | 512 |
-
 1;
-

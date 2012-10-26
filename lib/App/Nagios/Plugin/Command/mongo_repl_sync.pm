@@ -4,21 +4,71 @@ use v5.14;
 use strictures;
 use Moose;
 
-# extends qw(CLI::App::Perf::Index::Command);
 extends qw(MooseX::App::Cmd::Command);
-#with 'CLI::App::Perf::Index::Role::AutoHelp', 'CLI::App::Perf::Index::Role::ServiceDB',
-#  'MooseX::SimpleConfig',
-# 'CLI::App::Perf::Index::Role::FindConfigFile';
 
 with qw(MooseX::Nagios::Plugin::Fetch::BySnmp MooseX::Nagios::Plugin::Approve::WarnCrit),
   qw(MooseX::Nagios::Plugin);
 
-# ABSTRACT: import new performance data for service
+# ABSTRACT: plugin to check synchronisation lag of mongodb replicata set
+
+=method description
+
+Returns plugin's short description for building help/usage page by L<App::Cmd>.
+
+=cut
 
 sub description
 {
     "Checking synchronisation lag of mongodb replicata set";
 }
+
+=method fetch
+
+Fetches replication set data from smart-snmpd for mongodb plugin.
+
+Mib below C<.1.3.6.1.4.1.36539.20.$plugin_id.100>:
+
+    REPL				.20		STRUCT
+    REPL.IS_MASTER			.20.2		INT
+    REPL.IS_SECONDARY			.20.3		INT
+    REPL.ME				.20.4		STR
+    REPL.PRIMARY			.20.5		STR
+    REPL.HOSTS				.20.7		TABLE
+    REPL.HOSTS.ENTRIES			.20.7.1		ENTRY
+    REPL.HOSTS.ENTRIES.ID		.20.7.1.1	UINT
+    REPL.HOSTS.ENTRIES.NAME		.20.7.1.2	STR
+    REPL.HOSTS.ENTRIES.HEALTH		.20.7.1.3	STR (FLOAT)
+    REPL.HOSTS.ENTRIES.STATE		.20.7.1.4	UINT
+    REPL.HOSTS.ENTRIES.STATE_STR	.20.7.1.5	STR
+    REPL.HOSTS.ENTRIES.UPTIME		.20.7.1.6	UINT64
+    REPL.HOSTS.ENTRIES.OPTIME.TIMESTAMP	.20.7.1.7	UINT64
+    REPL.HOSTS.ENTRIES.OPTIME.INC	.20.7.1.8	UINT
+    REPL.HOSTS.ENTRIES.PING_MS		.20.7.1.9	UINT64
+    REPL.HOSTS.ENTRIES.LAST_HEARTBEAT_MS .20.7.1.10	UINT64
+
+When more than one host is primary or secondary, an exception is
+thrown.
+
+Returns an array of rows, containing the rows for the primary
+node in index 0 and the rows for the secondary node in index 1.
+
+  [ $primary, $secondary ]
+
+Following performance data is appended:
+
+=over 4
+
+=item *
+
+C<optime_$nodename> for each host having an optime value (PRIMARY, SECONDARY)
+
+=item *
+
+C<last_heartbeat_$nodename> for each host having an last_heartbeat value (SECONDARY, ARBITER)
+
+=back
+
+=cut
 
 sub fetch
 {
@@ -36,8 +86,6 @@ sub fetch
 
     my $baseoid = $extapp_base . $found[0] . ".100.20.7.1";
     my $resp = $self->session->get_table( -baseoid => $baseoid );
-    # @values = (int($resp->{$extapp_base . $found[0] . ".100.99.3"} / (1000*1000)));
-    # push(@values, ["querytime", $values[0], $self->warn, $self->crit]);
     $resp = { map { ( my $oid = $_ ) =~ s/^\Q$baseoid\E\.//; $oid => $resp->{$_} } keys %$resp };
     my @repl;
     foreach my $oid ( keys %$resp )
@@ -89,6 +137,17 @@ sub fetch
     return \@values;
 }
 
+=method aprove
+
+Individual approve method checking the time difference between
+the heartbeat timestamp and the optime timestamp of the secondary
+node and the optime timestamp difference between the primary
+node and the secondary node.
+
+Both differences must be lower than the warning or critical threshold.
+
+=cut
+
 sub approve
 {
     my ( $self, @values ) = @_;
@@ -115,13 +174,4 @@ sub approve
     return;
 }
 
-# nagios check | W | C |
-# check connection | 1s | 2s |
-# replication lag | 15s | 30s |
-# replset status | 0,3,5 | 4,6,7 | OK = 1,2,7
-# % open connections| 70% | 80% |
-# % lock time | 5% | 10% |
-# queries per second| 256 | 512 |
-
 1;
-

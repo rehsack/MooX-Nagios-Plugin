@@ -4,11 +4,7 @@ use v5.14;
 use strictures;
 use Moose;
 
-# extends qw(CLI::App::Perf::Index::Command);
 extends qw(MooseX::App::Cmd::Command);
-#with 'CLI::App::Perf::Index::Role::AutoHelp', 'CLI::App::Perf::Index::Role::ServiceDB',
-#  'MooseX::SimpleConfig',
-# 'CLI::App::Perf::Index::Role::FindConfigFile';
 
 with qw(MooseX::Nagios::Plugin::Fetch::BySnmp MooseX::Nagios::Plugin::Approve::WarnCrit),
   qw(MooseX::Nagios::Plugin MooseX::Nagios::Plugin::Type::Threshold);
@@ -22,12 +18,43 @@ has '+crit' => (
                  coerce => 1,
                );
 
-# ABSTRACT: import new performance data for service
+# ABSTRACT: plugin to check locking times of mongodb
+
+=method description
+
+Returns plugin's short description for building help/usage page by L<App::Cmd>.
+
+=cut
 
 sub description
 {
-    "Checking synchronisation state of mongodb replicata set";
+    "Checking locking times of mongodb";
 }
+
+=method fetch
+
+Fetches the global lock statistics from smart-snmpd plugin for mongodb.
+
+Mib below C<.1.3.6.1.4.1.36539.20.$plugin_id.100>:
+
+    GLOBALLOCK			.10	STRUCT
+    GLOBALLOCK.TOTALTIME	.10.1	UINT64
+    GLOBALLOCK.LOCKTIME		.10.2	UINT64
+
+Returns percentual time in locks (referred to total time).
+
+Following performance data is additionally generated:
+
+=over 4
+
+=item *
+
+C<locktime> 3-tuple consists of percentual lock time, warn threshold and
+critical threshold.
+
+=back
+
+=cut
 
 sub fetch
 {
@@ -61,14 +88,4 @@ sub fetch
     return \@values;
 }
 
-# nagios check | W | C |
-# check connection | 1s | 2s |
-# replication lag | 15s | 30s |
-# replset status | 0,3,5 | 4,6,8 | OK = 1,2,7
-# % open connections| 70% | 80% |
-# % lock time | 5% | 10% |
-# # queries per second| 256 | 512 |
-# mongo_status
-
 1;
-
