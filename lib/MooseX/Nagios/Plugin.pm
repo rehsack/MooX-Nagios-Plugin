@@ -30,6 +30,13 @@ has 'plugin_name' => (
                        required => 1,
                      );
 
+=method _plugin_name
+
+builder for attribute C<plugin_name>. Returns the last part
+of the package name.
+
+=cut
+
 sub _plugin_name
 {
     my $class = $_[0];
@@ -84,11 +91,31 @@ sub _handle_output_return
     return $nagios_codes{$code};
 }
 
+=method ok
+
+Prints out the check result "OK" and the check message, if any.
+If permitted (TODO) and available, performance data is displayed
+separated from status output by "|" and among each other by " ".
+
+Returns the nagios status code for OK - 0.
+
+=cut
+
 sub ok
 {
     my ( $self, @values ) = @_;
     $self->_handle_output_return( "OK", @values );
 }
+
+=method warning
+
+Prints out the check result "WARNING" and the check message, if any.
+If permitted (TODO) and available, performance data is displayed
+separated from status output by "|" and among each other by " ".
+
+Returns the nagios status code for WARNING - 1.
+
+=cut
 
 sub warning
 {
@@ -96,17 +123,52 @@ sub warning
     $self->_handle_output_return( "WARNING", @values );
 }
 
+=method critical
+
+Prints out the check result "CRITICAL" and the check message, if any.
+If permitted (TODO) and available, performance data is displayed
+separated from status output by "|" and among each other by " ".
+
+Returns the nagios status code for CRITICAL - 2.
+
+=cut
+
 sub critical
 {
     my ( $self, @values ) = @_;
     $self->_handle_output_return( "CRITICAL", @values );
 }
 
+=method unknown
+
+Prints out the check result "UNKNOWN" and the check message, if any.
+If permitted (TODO) and available, performance data is displayed
+separated from status output by "|" and among each other by " ".
+
+Returns the nagios status code for UNKNOWN - 3.
+
+=cut
+
 sub unknown
 {
     my ( $self, @values ) = @_;
     $self->_handle_output_return( "UNKNOWN", @values );
 }
+
+=method execute
+
+Provides the execute method required by App::Cmd. It executes the
+C<fetch> method provided by the plugin encompassed by an alarm timer.
+
+The fetched values are passed to the approve method which is either
+provided by specific roles (eg. L<MooseX::Nagios::Plugin::Approve::Warn>)
+or by the command plugin, if individual checks are required.
+
+Any catched exception leads directly to an UNKNOWN state.
+
+Returns the nagios status code.
+
+=cut
 
 sub execute
 {

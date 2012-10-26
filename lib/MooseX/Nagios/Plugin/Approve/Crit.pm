@@ -16,6 +16,13 @@ has 'crit' => (
                 required      => 1,
               );
 
+=method approve($prove;@perfdata)
+
+Approves the value in $prove being lower than threshold in I<crit> attribute,
+invoking $self->critical otherwise.
+
+=cut
+
 sub approve
 {
     my ( $self, @values ) = @_;

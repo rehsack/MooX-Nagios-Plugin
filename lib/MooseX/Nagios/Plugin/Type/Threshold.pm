@@ -3,7 +3,7 @@ package MooseX::Nagios::Plugin::Type::Threshold;
 use strictures;
 use Moose::Role;
 
-# type trait ...
+# ABSTRACT: MooseX::Nagios role loading the L<MooseX::Types::Threshold> type traits
 
 use MooseX::Types::Threshold;
 

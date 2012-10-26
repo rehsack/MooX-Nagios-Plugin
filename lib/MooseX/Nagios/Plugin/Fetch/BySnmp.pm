@@ -78,6 +78,13 @@ has 'net_snmpd_ident' => (
                            lazy     => 1
                          );
 
+=method _snmp_connect
+
+Connects to specified host on given port using snmp protocol in
+given version.
+
+=cut
+
 sub _snmp_connect
 {
     my $self = shift;
@@ -92,6 +99,25 @@ sub _snmp_connect
                         );
 }
 
+=method _snmp_server_type
+
+Determines snmpd type by fetching SNMPv2-MIB::sysObjectID.0 (.1.3.6.1.2.1.1.2.0)
+and comparing it against known type:
+
+=over 16
+
+=item C<^.1.3.6.1.4.1.36539.>
+
+Smart-SNMPd
+
+=item C<^.1.3.6.1.4.1.8072.>
+
+net-snmpd
+
+=back
+
+=cut
+
 sub _snmp_server_type
 {
     my $self     = shift;
@@ -101,6 +127,19 @@ sub _snmp_server_type
     $sysIdent =~ m/^\.1\.3\.6\.1\.4\.1\.8072\./  and return $self->net_snmpd_ident;
     return $sysIdent;
 }
+
+=method validate_snmpd
+
+Validates snmpd against given list of permitted snmpd's.
+
+  $self->validate_snmpd( $self->smart_snmpd_ident );
+  $self->validate_snmpd( $self->net_snmpd_ident );
+
+Throws exception when found snmpd is not in list of permitted snmpd's.
+
+Returns found snmpd.
+
+=cut
 
 sub validate_snmpd
 {
@@ -119,6 +158,70 @@ sub validate_snmpd
 
     return 1;
 }
+
+=method find_ext_app
+
+Smart-SNMPd feature: external plugin mib.
+
+External objects mib looks like:
+
+    LAST_UPDATE_EXTERNAL_COMMAND	.1	UINT64
+    LAST_STARTED_EXTERNAL_COMMAND	.2	UINT64
+    LAST_FINISHED_EXTERNAL_COMMAND	.3	UINT64
+    EXTERNAL_COMMAND_COMMAND_PATH	.4	STR
+    EXTERNAL_COMMAND_COMMAND_LINE	.5	STR
+    EXTERNAL_COMMAND_USER		.6	STR
+    EXTERNAL_COMMAND_LAST_EXIT_CODE	.7	INT
+    EXTERNAL_COMMAND_LAST_EXIT_SIGNAL	.8	INT
+    EXTERNAL_COMMAND_ERROR_CODE		.9	INT
+    EXTERNAL_COMMAND_ERROR_MESSAGE	.10	STR
+    EXTERNAL_COMMAND_DATA		.100	STRUCT
+
+Scans external objects mib for specified pattern.
+
+Expects parameters:
+
+=over 8
+
+=item C<ident>
+
+Plugin name to search for
+
+=item C<match>
+
+Regular expression matching fetched value
+
+=item C<match_oid>
+
+Object Identifier below each external object needed to match (.1 .. .10).
+Defaults to C<.5> (I<EXTERNAL_COMMAND_COMMAND_LINE>) if omitted.
+
+=item C<update_age>
+
+Proved that the timestamp in C<.1> (I<LAST_UPDATE_EXTERNAL_COMMAND>) is not
+older than C<update_age> seconds.  Defaults to C<5min> if omitted.
+
+=back
+
+In scalar context the oid below I<SM_EXTERNAL_COMMANDS>
+(C<.1.3.6.1.4.1.36539.20>) matched specified expression is returned.
+
+In list context this method returns the values for the oid below
+I<SM_EXTERNAL_COMMANDS> as first entry and the fetched values for the
+oids '.1' .. '.10' below SM_EXTERNAL_COMMANDS.$found are returned
+with path stripped:
+  [
+    $found,
+    {
+	'.1' => ...,
+	'.2' => ...,
+	...
+    }
+  ]
+
+If the desired external object isn't found, an exception is thrown.
+
+=cut
 
 sub find_ext_app
 {

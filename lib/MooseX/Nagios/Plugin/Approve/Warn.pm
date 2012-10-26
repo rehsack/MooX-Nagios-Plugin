@@ -16,6 +16,13 @@ has 'warn' => (
                 required      => 1,
               );
 
+=method approve($prove;@perfdata)
+
+Approves the value in $prove being lower than threshold in I<warn> attribute,
+invoking $self->warning otherwise.
+
+=cut
+
 sub approve
 {
     my ( $self, @values ) = @_;
