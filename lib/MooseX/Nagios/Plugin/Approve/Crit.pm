@@ -28,7 +28,7 @@ sub approve
     my ( $self, @values ) = @_;
 
     my $value = shift @values;
-    $value < $self->crit or return $self->critical(@values);
+    $self->crit > $value or return $self->critical(@values);
 
     return;
 }

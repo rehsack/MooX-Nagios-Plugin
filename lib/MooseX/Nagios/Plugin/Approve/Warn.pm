@@ -28,7 +28,7 @@ sub approve
     my ( $self, @values ) = @_;
 
     my $value = shift @values;
-    $value < $self->warn or return $self->warning(@values);
+    $self->warn > $value or return $self->warning(@values);
 
     return;
 }
