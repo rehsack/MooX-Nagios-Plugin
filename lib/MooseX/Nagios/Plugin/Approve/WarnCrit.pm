@@ -17,8 +17,9 @@ and I<warn> attribute, invoking $self->critical or $self->warning otherwise.
 sub approve
 {
     my $self = shift;
-    $self->MooseX::Nagios::Plugin::Approve::Crit::approve(@_);
-    $self->MooseX::Nagios::Plugin::Approve::Warn::approve(@_);
+    my $rc;
+    $rc = $self->MooseX::Nagios::Plugin::Approve::Crit::approve(@_) and return $rc;
+    $rc = $self->MooseX::Nagios::Plugin::Approve::Warn::approve(@_) and return $rc;
     return;
 }
 
