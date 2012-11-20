@@ -14,7 +14,7 @@ has 'crit' => (
                 is            => 'rw',
                 documentation => 'crit threshold',
                 required      => 1,
-		predicate     => 'has_crit',
+                predicate     => 'has_crit',
               );
 
 =method approve($prove;@perfdata)
@@ -29,7 +29,9 @@ sub approve
     my ( $self, @values ) = @_;
 
     my $value = shift @values;
-    $self->has_crit and $self->crit <= $value and return $self->critical(@values);
+    $self->has_crit
+      and $self->crit <= $value    # traited behavior
+      and return $self->critical(@values);
 
     return;
 }

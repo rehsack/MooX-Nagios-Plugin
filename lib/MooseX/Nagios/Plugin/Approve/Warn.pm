@@ -14,7 +14,7 @@ has 'warn' => (
                 is            => 'rw',
                 documentation => 'warn threshold',
                 required      => 1,
-		predicate     => 'has_warn',
+                predicate     => 'has_warn',
               );
 
 =method approve($prove;@perfdata)
@@ -29,7 +29,9 @@ sub approve
     my ( $self, @values ) = @_;
 
     my $value = shift @values;
-    $self->has_warn and $self->warn <= $value and return $self->warning(@values);
+    $self->has_warn
+      and $self->warn <= $value    # traited behavior
+      and return $self->warning(@values);
 
     return;
 }
