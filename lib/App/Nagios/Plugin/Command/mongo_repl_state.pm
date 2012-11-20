@@ -124,8 +124,8 @@ sub approve
     my (@repl) = @{ shift @values };
     foreach my $host (@repl)
     {
-        $host->[4] ~~ @ok_states   and next;
-	$host->[4] ~~ @warn_states and $fn = "warning" and next;
+        $host->[4] ~~ @ok_states and next;
+        $host->[4] ~~ @warn_states and $fn = "warning" and next;
         return $self->critical(@values);
     }
 

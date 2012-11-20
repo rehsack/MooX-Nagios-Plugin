@@ -4,7 +4,8 @@ use strictures;
 
 # ABSTRACT: defines some reasonable threshold types for nagios checks
 
-use MooseX::Types '-declare' => [qw(Threshold TimeThreshold SizeThreshold RangeThreshold RelativeThreshold)];
+use MooseX::Types '-declare' =>
+  [qw(Threshold TimeThreshold SizeThreshold RangeThreshold RelativeThreshold)];
 
 use MooseX::Types::Moose qw(Int Str ArrayRef);
 
