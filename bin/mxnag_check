@@ -4,4 +4,4 @@
 # PODNAME: apdex
 
 use App::Nagios::Plugin;
-App::Nagios::Plugin->run();
+exit App::Nagios::Plugin->run();
