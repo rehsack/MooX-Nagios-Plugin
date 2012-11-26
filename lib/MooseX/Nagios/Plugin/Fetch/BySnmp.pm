@@ -120,9 +120,11 @@ net-snmpd
 
 sub _snmp_server_type
 {
-    my $self     = shift;
-    my $resp     = $self->session->get_request( -varbindlist => [qw(.1.3.6.1.2.1.1.2.0)] );
-    my $sysIdent = $resp->{".1.3.6.1.2.1.1.2.0"};
+    my $self        = shift;
+    my $sysIdentOid = ".1.3.6.1.2.1.1.2.0";
+    my $resp        = $self->session->get_request( -varbindlist => [$sysIdentOid] );
+    ( my $sysIdent = $resp->{$sysIdentOid} )
+      or croak( "No response from " . $self->host . ":" . $self->port . "querying $sysIdentOid" );
     $sysIdent =~ m/^\.1\.3\.6\.1\.4\.1\.36539\./ and return $self->smart_snmpd_ident;
     $sysIdent =~ m/^\.1\.3\.6\.1\.4\.1\.8072\./  and return $self->net_snmpd_ident;
     return $sysIdent;
