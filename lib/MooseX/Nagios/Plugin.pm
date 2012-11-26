@@ -176,9 +176,9 @@ sub execute
 
     my ( @values, @errlst );
 
+    local $SIG{ALRM} = sub { die "alarm\n" };
+    local $SIG{__DIE__} = sub { push( @errlst, @_ ) };
     eval {
-        local $SIG{ALRM} = sub { die "alarm\n" };
-        local $SIG{__DIE__} = sub { push( @errlst, @_ ) };
         $self->alarm_timeout and alarm( $self->alarm_timeout );
 
         my $fetched = $self->fetch();
