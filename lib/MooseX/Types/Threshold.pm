@@ -271,19 +271,16 @@ if ( !$@ )
         scalar(@args) >= 1 or croak "Threshold::Time->new('time[unit]')";
         scalar(@args) <= 1 or croak "Threshold::Time->new('time[unit]')";
 
-        my $self = bless( {}, $class );
-
         for my $arg (@args)
         {
             if ( $arg =~ m/^(\d+)($rx_str)?$/ )
             {
-                my $size = $1;
-                my $unit = $2;
-                $unit and $unit = $unit_sizes{ lc $unit };
-                $unit ||= $unit_sizes{s};
+                my $value = $1;
+                my $unit  = $2;
 
-                $self->{duration} = $size;
-                $self->{unit}     = $unit;
+                return
+                  $class->new_with_params( value => $value,
+                                           unit  => $unit );
             }
             else
             {
@@ -291,8 +288,19 @@ if ( !$@ )
             }
         }
 
-        defined( $self->{duration} )
-          or croak("Threshold::Time->new('time[unit]')");
+        croak("Threshold::Time->new('time[unit]')");
+    }
+
+    sub new_with_params
+    {
+        my ( $class, %params ) = @_;
+        my $self = bless( {}, $class );
+
+        $params{unit} and $params{unit} = $unit_sizes{ lc $params{unit} };
+        $params{unit} ||= $unit_sizes{s};
+
+        $self->{duration} = $params{value} || 0;
+        $self->{unit} = $params{unit};
 
         return $self;
     }
