@@ -66,12 +66,22 @@ sub fetch
                                      }
                                    );
 
-    my $resp =
-      $self->session->get_request( -varbindlist => [ $extapp_base . $found[0] . ".100.5" ] );
-    @values = ( int( $resp->{ $extapp_base . $found[0] . ".100.5" } * 1000 * 1000 ) );    # ms -> ns
+    my $uptime_oid = $extapp_base . $found[0] . ".100.5";
+    my $resp = $self->session->get_request( -varbindlist => [$uptime_oid] );
+
+    defined $resp->{$uptime_oid} or return;
+
+    my $uptime = $resp->{$uptime_oid};
+    push(
+          @values,
+          Threshold::Time->new_with_params(
+                                            value => $uptime,
+                                            unit  => "ms"
+                                          )
+        );
     push( @values, [ "uptime", $values[0], $self->crit ] );
 
-    $self->message( sprintf( "%ds", $resp->{ $extapp_base . $found[0] . ".100.5" } ) );
+    $self->message( sprintf( "%ds", $resp->{$uptime_oid} ) );
 
     return \@values;
 }

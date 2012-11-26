@@ -11,6 +11,16 @@ with qw(MooseX::Nagios::Plugin::Fetch::BySnmp MooseX::Nagios::Plugin::Approve::W
 
 # ABSTRACT: plugin to check query time of snmpd plugin for mongodb
 
+has '+crit' => (
+                 isa    => 'Threshold::Time',
+                 coerce => 1,
+               );
+
+has '+warn' => (
+                 isa    => 'Threshold::Time',
+                 coerce => 1,
+               );
+
 =method description
 
 Returns plugin's short description for building help/usage page by L<App::Cmd>.
@@ -55,13 +65,17 @@ sub fetch
                                      }
                                    );
 
-    my $resp =
-      $self->session->get_request( -varbindlist => [ $extapp_base . $found[0] . ".100.99.3" ] );
-    @values = ( int( $resp->{ $extapp_base . $found[0] . ".100.99.3" } / ( 1000 * 1000 ) ) );
+    my $query_time_oid = $extapp_base . $found[0] . ".100.99.3";
+    my $resp = $self->session->get_request( -varbindlist => [$query_time_oid] );
+
+    defined $resp->{$query_time_oid} or return;
+
+    my $query_time = $resp->{$query_time_oid};
+    @values = Threshold::Time->new_with_params( value => $query_time,
+                                                unit  => "ns" );
     push( @values, [ "querytime", $values[0], $self->warn, $self->crit ] );
 
-    $self->message(
-        sprintf( "%0.6fms", $resp->{ $extapp_base . $found[0] . ".100.99.3" } / ( 1000 * 1000 ) ) );
+    $self->message( sprintf( "%0.6fms", $resp->{$query_time_oid} / ( 1000 * 1000 ) ) );
 
     return \@values;
 }

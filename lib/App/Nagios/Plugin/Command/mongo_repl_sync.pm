@@ -11,6 +11,16 @@ with qw(MooseX::Nagios::Plugin::Fetch::BySnmp MooseX::Nagios::Plugin::Approve::W
 
 # ABSTRACT: plugin to check synchronisation lag of mongodb replicata set
 
+has '+crit' => (
+                 isa    => 'Threshold::Time',
+                 coerce => 1,
+               );
+
+has '+warn' => (
+                 isa    => 'Threshold::Time',
+                 coerce => 1,
+               );
+
 =method description
 
 Returns plugin's short description for building help/usage page by L<App::Cmd>.
@@ -155,8 +165,8 @@ sub approve
     my ( $primary, $secondary ) = @{ shift @values };
     if ( $secondary->[8] )
     {
-        my $heartbeat_diff = $secondary->[10] - $secondary->[7];
-        my $optime_diff    = $primary->[7] - $secondary->[7];
+        my $heartbeat_diff = Threshold::Time->new_with_params( value => $secondary->[10] - $secondary->[7], unit => "ms" );
+        my $optime_diff    = Threshold::Time->new_with_params( value => $primary->[7] - $secondary->[7], unit => "ms" );
 
         $heartbeat_diff > $self->crit
           and return $self->critical(@values);
