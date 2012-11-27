@@ -125,14 +125,33 @@ sub fetch
         {
             my $perf_name = 'optime_' . $rh->[2];
             $perf_name =~ s/\W/_/g;
-            push( @values, [ $perf_name, $rh->[7], $rh->[8] // 0 ] );
+            push(
+                  @values,
+                  [
+                     $perf_name,
+                     Threshold::Time->new_with_params(
+                                                       value => $rh->[7],
+                                                       unit  => "ms"
+                                                     ),
+                     $rh->[8] // 0
+                  ]
+                );
         }
 
         if ( defined( $rh->[10] ) )
         {
             my $perf_name = 'last_heartbeat_' . $rh->[2];
             $perf_name =~ s/\W/_/g;
-            push( @values, [ $perf_name, $rh->[10] ] );
+            push(
+                  @values,
+                  [
+                     $perf_name,
+                     Threshold::Time->new_with_params(
+                                                       value => $rh->[10],
+                                                       unit  => "ms"
+                                                     )
+                  ]
+                );
         }
     }
 
@@ -165,8 +184,12 @@ sub approve
     my ( $primary, $secondary ) = @{ shift @values };
     if ( $secondary->[8] )
     {
-        my $heartbeat_diff = Threshold::Time->new_with_params( value => $secondary->[10] - $secondary->[7], unit => "ms" );
-        my $optime_diff    = Threshold::Time->new_with_params( value => $primary->[7] - $secondary->[7], unit => "ms" );
+        my $heartbeat_diff =
+          Threshold::Time->new_with_params( value => $secondary->[10] - $secondary->[7],
+                                            unit  => "ms" );
+        my $optime_diff =
+          Threshold::Time->new_with_params( value => $primary->[7] - $secondary->[7],
+                                            unit  => "ms" );
 
         $heartbeat_diff > $self->crit
           and return $self->critical(@values);

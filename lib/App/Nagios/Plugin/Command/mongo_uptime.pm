@@ -10,8 +10,9 @@ with qw(MooseX::Nagios::Plugin::Fetch::BySnmp MooseX::Nagios::Plugin::Approve::C
   qw(MooseX::Nagios::Plugin MooseX::Nagios::Plugin::Type::Threshold);
 
 has '+crit' => (
-                 isa    => 'Threshold::Time',
-                 coerce => 1,
+                 isa                 => 'Threshold::Time',
+                 coerce              => 1,
+                 compare_modificator => -1,
                );
 
 # ABSTRACT: plugin to check uptime of mongodb to avoid permanently restarts
@@ -77,11 +78,12 @@ sub fetch
           Threshold::Time->new_with_params(
                                             value => $uptime,
                                             unit  => "ms"
-                                          )
+            )->update_unit( unit => "s" )
         );
+    $self->crit->update_unit( unit => 's' );
     push( @values, [ "uptime", $values[0], $self->crit ] );
 
-    $self->message( sprintf( "%ds", $resp->{$uptime_oid} ) );
+    $self->message( "" . $values[0] );
 
     return \@values;
 }

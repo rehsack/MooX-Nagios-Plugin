@@ -71,11 +71,25 @@ sub fetch
     defined $resp->{$query_time_oid} or return;
 
     my $query_time = $resp->{$query_time_oid};
-    @values = Threshold::Time->new_with_params( value => $query_time,
-                                                unit  => "ns" );
-    push( @values, [ "querytime", $values[0], $self->warn, $self->crit ] );
+    push(
+          @values,
+          Threshold::Time->new_with_params(
+                                            value => $query_time,
+                                            unit  => "ns"
+            )->update_unit(
+                            unit => "ms",
+                            fmt  => "%0.6fms"
+                          )
+        );
+    push(
+          @values,
+          [
+             "querytime", $values[0],
+             $self->warn->update_unit( unit => "ms" ), $self->crit->update_unit( unit => "ms" )
+          ]
+        );
 
-    $self->message( sprintf( "%0.6fms", $resp->{$query_time_oid} / ( 1000 * 1000 ) ) );
+    $self->message( "" . $values[0] );
 
     return \@values;
 }
