@@ -9,7 +9,7 @@ requires qw(help_flag);    # ensure MooseX::Getopt is loaded >:-)
 requires 'critical';
 
 has 'crit' => (
-                traits        => [qw(Getopt)],
+                traits        => [qw(Getopt ThresholdCmp)],
                 isa           => 'Int',
                 is            => 'rw',
                 documentation => 'crit threshold',
@@ -30,7 +30,8 @@ sub approve
 
     my $value = shift @values;
     $self->has_crit
-      and $self->crit <= $value    # traited behavior
+      and ( $self->crit <=> $value ) * $self->meta->get_attribute("crit")->compare_modificator <=
+      0    # traited behavior
       and return $self->critical(@values);
 
     return;

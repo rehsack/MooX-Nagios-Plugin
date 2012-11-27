@@ -9,7 +9,7 @@ requires qw(help_flag);    # ensure MooseX::Getopt is loaded >:-)
 requires 'warning';
 
 has 'warn' => (
-                traits        => [qw(Getopt)],
+                traits        => [qw(Getopt ThresholdCmp)],
                 isa           => 'Int',
                 is            => 'rw',
                 documentation => 'warn threshold',
@@ -30,7 +30,8 @@ sub approve
 
     my $value = shift @values;
     $self->has_warn
-      and $self->warn <= $value    # traited behavior
+      and ( $self->warn <=> $value ) * $self->meta->get_attribute("warn")->compare_modificator <=
+      0    # traited behavior
       and return $self->warning(@values);
 
     return;

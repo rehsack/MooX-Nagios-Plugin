@@ -89,7 +89,7 @@ if ( !$@ )
 
         for my $arg (@args)
         {
-            if ( $arg =~ m/^(\d+)%?/ )
+            if ( $arg =~ m/^(\d+)%?$/ )
             {
                 $self->{percent} = $1;
             }
@@ -248,7 +248,8 @@ if ( !$@ )
       '>'   => \&my_gt,
       '>='  => \&my_ge,
       '<=>' => \&compare,
-      '0+'  => sub { $_[0]->{duration} * $_[0]->{unit} };
+      '""'  => sub { sprintf( $_[0]->{fmt}, $_[0]->{duration} ) },
+      '0+' => sub { $_[0]->{duration} * $_[0]->{unit} };
     use Carp qw/croak/;
 
     my %unit_sizes = (
@@ -273,19 +274,11 @@ if ( !$@ )
 
         for my $arg (@args)
         {
-            if ( $arg =~ m/^(\d+)($rx_str)?$/ )
-            {
-                my $value = $1;
-                my $unit  = $2;
+            $arg =~ m/^(\d+)($rx_str)?$/ and return
+              $class->new_with_params( value => $1,
+                                       unit  => $2 );
 
-                return
-                  $class->new_with_params( value => $value,
-                                           unit  => $unit );
-            }
-            else
-            {
-                croak "Neither absolute nor relative value: '$arg'";
-            }
+            croak "Invalid time value: '$arg'";
         }
 
         croak("Threshold::Time->new('time[unit]')");
@@ -296,11 +289,26 @@ if ( !$@ )
         my ( $class, %params ) = @_;
         my $self = bless( {}, $class );
 
-        $params{unit} and $params{unit} = $unit_sizes{ lc $params{unit} };
-        $params{unit} ||= $unit_sizes{s};
-
         $self->{duration} = $params{value} || 0;
-        $self->{unit} = $params{unit};
+        defined( $params{unit} )                   or $params{unit} = "s";
+        defined( $unit_sizes{ lc $params{unit} } ) or $params{unit} = "s";
+        $self->{unit_name} = $params{unit};
+        $self->{unit}      = $unit_sizes{ lc $self->{unit_name} };
+        $self->{fmt}       = $params{fmt} || "%d" . $self->{unit_name};
+
+        return $self;
+    }
+
+    sub update_unit
+    {
+        my ( $self, %params ) = @_;
+        my $value = int($self);
+        defined( $params{unit} )                   or $params{unit} = "s";
+        defined( $unit_sizes{ lc $params{unit} } ) or $params{unit} = "s";
+        $self->{unit_name} = $params{unit};
+        $self->{unit}      = $unit_sizes{ lc $self->{unit_name} };
+        $self->{fmt}       = $params{fmt} || "%d" . $self->{unit_name};
+        $self->{duration}  = $value / $self->{unit};
 
         return $self;
     }
