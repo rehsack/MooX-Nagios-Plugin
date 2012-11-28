@@ -3,6 +3,7 @@ package MooseX::Nagios::Plugin::Fetch::BySnmp;
 use v5.14;
 use strictures;
 use Moose::Role;
+use Moose::Util::TypeConstraints;
 
 # ABSTRACT: nagios plugin role for snmp checks
 
@@ -20,9 +21,10 @@ sub default_remote_port { 161 }
 
 has 'snmp_version' => (
                         traits        => [qw(Getopt)],
-                        isa           => 'Str',
+                        isa           => enum( [qw(1 2c 3)] ),
                         is            => 'rw',
                         cmd_flag      => 'snmp-version',
+                        cmd_aliases   => 'V',
                         documentation => 'SNMP protocol version to use (1, 2c, 3)',
                         builder       => 'default_snmp_version',
                         required      => 1,
@@ -35,6 +37,7 @@ has 'snmp_community' => (
                           isa           => 'Str',
                           is            => 'rw',
                           cmd_flag      => 'snmp-community',
+                          cmd_aliases   => 'c',
                           documentation => 'SNMP community name (versions 1 & 2c)',
                           builder       => 'default_snmp_community',
                           required      => 1,
@@ -77,6 +80,15 @@ has 'net_snmpd_ident' => (
                            init_arg => undef,
                            lazy     => 1
                          );
+
+has external_app_base_oid => (
+                               traits   => [qw(NoGetopt)],
+                               isa      => 'Str',
+                               is       => 'ro',
+                               builder  => '_external_app_base_oid',
+                               init_arg => undef,
+                               lazy     => 1
+                             );
 
 =method _snmp_connect
 
@@ -128,6 +140,20 @@ sub _snmp_server_type
     $sysIdent =~ m/^\.1\.3\.6\.1\.4\.1\.36539\./ and return $self->smart_snmpd_ident;
     $sysIdent =~ m/^\.1\.3\.6\.1\.4\.1\.8072\./  and return $self->net_snmpd_ident;
     return $sysIdent;
+}
+
+=method _external_app_base_oid
+
+Builds the default base object identifiet for external applications in known
+snmpd's.
+
+=cut
+
+sub _external_app_base_oid
+{
+    my $self = shift;
+    $self->validate_snmpd( $self->smart_snmpd_ident );
+    return ".1.3.6.1.4.1.36539.20";
 }
 
 =method validate_snmpd
@@ -238,14 +264,14 @@ sub find_ext_app
     my $session = $self->session;
     $self->validate_snmpd( $self->smart_snmpd_ident );
 
-    my $extapp_base       = ".1.3.6.1.4.1.36539.20.";
     my @extapp_query_vals = qw(.1 .2 .3 .4 .5 .6 .7 .8 .9 .10);
     my @found;
     for my $extapp ( 1 .. 255 )
     {
-        my $extapp_oid = $extapp_base . $extapp;
+        my $extapp_oid = join( ".", $self->external_app_base_oid, $extapp );
         my $resp =
           $session->get_request( -varbindlist => [ map { $extapp_oid . $_ } @extapp_query_vals ] );
+        $resp or next;
         $resp =
           { map { ( my $oid = $_ ) =~ s/^\Q$extapp_oid\E//; $oid => $resp->{$_} } keys %$resp };
         $resp->{ $params->{match_oid} } =~ $params->{match}
