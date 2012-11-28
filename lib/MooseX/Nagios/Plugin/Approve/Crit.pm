@@ -30,8 +30,7 @@ sub approve
 
     my $value = shift @values;
     $self->has_crit
-      and ( $self->crit <=> $value ) * $self->meta->get_attribute("crit")->compare_modificator <=
-      0    # traited behavior
+      and ( $self->crit <=> $value ) * $self->meta->get_attribute("crit")->compare_modificator <= 0
       and return $self->critical(@values);
 
     return;

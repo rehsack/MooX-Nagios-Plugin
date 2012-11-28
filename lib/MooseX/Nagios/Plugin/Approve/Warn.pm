@@ -30,8 +30,7 @@ sub approve
 
     my $value = shift @values;
     $self->has_warn
-      and ( $self->warn <=> $value ) * $self->meta->get_attribute("warn")->compare_modificator <=
-      0    # traited behavior
+      and ( $self->warn <=> $value ) * $self->meta->get_attribute("warn")->compare_modificator <= 0
       and return $self->warning(@values);
 
     return;
