@@ -302,7 +302,7 @@ if ( !$@ )
     sub update_unit
     {
         my ( $self, %params ) = @_;
-        my $value = int($self);
+        my $value = $self ->${ \overload::Method( $self, '0+' ) };    # $this->operator 0+ ()
         defined( $params{unit} )                   or $params{unit} = "s";
         defined( $unit_sizes{ lc $params{unit} } ) or $params{unit} = "s";
         $self->{unit_name} = $params{unit};
