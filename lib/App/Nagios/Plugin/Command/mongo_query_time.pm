@@ -6,7 +6,7 @@ use Moose;
 
 extends qw(MooseX::App::Cmd::Command);
 
-with qw(MooseX::Nagios::Plugin::Fetch::BySnmp MooseX::Nagios::Plugin::Approve::WarnCrit),
+with qw(MooseX::Nagios::Plugin::Fetch::MongoBySnmp MooseX::Nagios::Plugin::Approve::WarnCrit),
   qw(MooseX::Nagios::Plugin);
 
 # ABSTRACT: plugin to check query time of snmpd plugin for mongodb
@@ -56,16 +56,7 @@ sub fetch
     my ($self) = @_;
     my @values;
 
-    my $extapp_base = ".1.3.6.1.4.1.36539.20.";
-    my @found = $self->find_ext_app(
-                                     {
-                                       ident     => "MongoDB-Stats",
-                                       match     => qr/mongodb-stats$/,
-                                       match_oid => ".4",
-                                     }
-                                   );
-
-    my $query_time_oid = $extapp_base . $found[0] . ".100.99.3";
+    my $query_time_oid = join( ".", $self->mongo_instance_oid, "100.99.3" );
     my $resp = $self->session->get_request( -varbindlist => [$query_time_oid] );
 
     defined $resp->{$query_time_oid} or return;

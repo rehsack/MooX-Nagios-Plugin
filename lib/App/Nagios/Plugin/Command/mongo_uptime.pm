@@ -6,7 +6,7 @@ use Moose;
 
 extends qw(MooseX::App::Cmd::Command);
 
-with qw(MooseX::Nagios::Plugin::Fetch::BySnmp MooseX::Nagios::Plugin::Approve::Crit),
+with qw(MooseX::Nagios::Plugin::Fetch::MongoBySnmp MooseX::Nagios::Plugin::Approve::Crit),
   qw(MooseX::Nagios::Plugin MooseX::Nagios::Plugin::Type::Threshold);
 
 has '+crit' => (
@@ -58,20 +58,9 @@ sub fetch
     my ($self) = @_;
     my @values;
 
-    my $extapp_base = ".1.3.6.1.4.1.36539.20.";
-    my @found = $self->find_ext_app(
-                                     {
-                                       ident     => "MongoDB-Stats",
-                                       match     => qr/mongodb-stats$/,
-                                       match_oid => ".4",
-                                     }
-                                   );
-
-    my $uptime_oid = $extapp_base . $found[0] . ".100.5";
+    my $uptime_oid = join( ".", $self->mongo_instance_oid, "100.5" );
     my $resp = $self->session->get_request( -varbindlist => [$uptime_oid] );
-
-    defined $resp->{$uptime_oid} or return;
-
+    $resp or return;
     my $uptime = $resp->{$uptime_oid};
     push(
           @values,

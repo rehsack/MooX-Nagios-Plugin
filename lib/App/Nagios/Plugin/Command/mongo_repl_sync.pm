@@ -6,7 +6,7 @@ use Moose;
 
 extends qw(MooseX::App::Cmd::Command);
 
-with qw(MooseX::Nagios::Plugin::Fetch::BySnmp MooseX::Nagios::Plugin::Approve::WarnCrit),
+with qw(MooseX::Nagios::Plugin::Fetch::MongoBySnmp MooseX::Nagios::Plugin::Approve::WarnCrit),
   qw(MooseX::Nagios::Plugin);
 
 # ABSTRACT: plugin to check synchronisation lag of mongodb replicata set
@@ -85,19 +85,15 @@ sub fetch
     my ($self) = @_;
     my @values;
 
-    my $extapp_base = ".1.3.6.1.4.1.36539.20.";
-    my @found = $self->find_ext_app(
-                                     {
-                                       ident     => "MongoDB-Stats",
-                                       match     => qr/mongodb-stats$/,
-                                       match_oid => ".4",
-                                     }
-                                   );
-
-    my $baseoid = $extapp_base . $found[0] . ".100.20.7.1";
-    my $resp = $self->session->get_table( -baseoid => $baseoid );
-    $resp = { map { ( my $oid = $_ ) =~ s/^\Q$baseoid\E\.//; $oid => $resp->{$_} } keys %$resp };
+    my $replset_base_oid     = join( ".", $self->mongo_instance_oid, "100.20" );
+    my $replset_tbl_base_oid = join( ".", $replset_base_oid,         "7.1" );
+    my $resp = $self->session->get_table( -baseoid => $replset_tbl_base_oid );
+    $resp or return;
+    $resp =
+      { map { ( my $oid = $_ ) =~ s/^\Q$replset_tbl_base_oid\E\.//; $oid => $resp->{$_} }
+        keys %$resp };
     my @repl;
+
     foreach my $oid ( keys %$resp )
     {
         my ( $col, $row ) = split( qr/\./, $oid );
@@ -106,9 +102,11 @@ sub fetch
     }
     shift @repl;
 
-    $baseoid = $extapp_base . $found[0] . ".100.20.";
-    $resp    = $self->session->get_request( -varbindlist => [ map { $baseoid . $_ } qw(2 3 4 5) ] );
-    $resp    = { map { ( my $oid = $_ ) =~ s/^\Q$baseoid\E//; $oid => $resp->{$_} } keys %$resp };
+    $resp = $self->session->get_request(
+                       -varbindlist => [ map { join( ".", $replset_base_oid, $_ ) } qw(2 3 4 5) ] );
+    $resp or return;
+    $resp =
+      { map { ( my $oid = $_ ) =~ s/^\Q$replset_base_oid\E\.//; $oid => $resp->{$_} } keys %$resp };
 
     my ( $me, $master ) = @$resp{ '4', '5' };
     my @primaries = grep { $_ and $_->[2] eq $master } @repl;
