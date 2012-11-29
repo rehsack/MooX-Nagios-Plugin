@@ -29,6 +29,7 @@ sub approve
     my ( $self, @values ) = @_;
 
     my $value = shift @values;
+    defined $value or return $self->unknown("No data received");
     $self->has_warn
       and ( $self->warn <=> $value ) * $self->meta->get_attribute("warn")->compare_modificator <= 0
       and return $self->warning(@values);

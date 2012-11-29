@@ -182,6 +182,7 @@ sub execute
         $self->alarm_timeout and alarm( $self->alarm_timeout );
 
         my $fetched = $self->fetch();
+        $fetched or unshift( @errlst, "No data received" );
         @values = ref($fetched) ? @$fetched : ($fetched);
     };
     alarm(0);

@@ -29,6 +29,7 @@ sub approve
     my ( $self, @values ) = @_;
 
     my $value = shift @values;
+    defined $value or return $self->unknown("No data received");
     $self->has_crit
       and ( $self->crit <=> $value ) * $self->meta->get_attribute("crit")->compare_modificator <= 0
       and return $self->critical(@values);
