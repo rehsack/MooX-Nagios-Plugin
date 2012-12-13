@@ -56,13 +56,10 @@ Mib below C<.1.3.6.1.4.1.36539.20.$plugin_id.100>:
     REPL.HOSTS.ENTRIES.PING_MS		.20.7.1.9	UINT64
     REPL.HOSTS.ENTRIES.LAST_HEARTBEAT_MS .20.7.1.10	UINT64
 
-When more than one host is primary or secondary, an exception is
-thrown.
+When more than one host is primary, an exception is thrown.
 
-Returns an array of rows, containing the rows for the primary
-node in index 0 and the rows for the secondary node in index 1.
-
-  [ $primary, $secondary ]
+Returns the opsync timestamp difference from checked node to primary node,
+the warning and the critical threshold.
 
 Following performance data is appended:
 
@@ -70,11 +67,13 @@ Following performance data is appended:
 
 =item *
 
-C<optime_$nodename> for each host having an optime value (PRIMARY, SECONDARY)
+C<optime_$nodename> for checked host containing last opsync timestamp
+and operations counts
 
 =item *
 
-C<last_heartbeat_$nodename> for each host having an last_heartbeat value (SECONDARY, ARBITER)
+C<opsync_$nodename> for checked host containing opsync timestamp difference
+to primary node, the warning and the critical threshold.
 
 =back
 
