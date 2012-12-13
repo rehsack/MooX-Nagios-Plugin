@@ -64,9 +64,10 @@ sub fetch
 
     my $replset_tbl_base_oid = join( ".", $self->mongo_instance_oid, "100.20.7.1" );
     my $resp = $self->session->get_table( -baseoid => $replset_tbl_base_oid );
-    $resp =
-      { map { ( my $oid = $_ ) =~ s/^\Q$replset_tbl_base_oid\E\.//; $oid => $resp->{$_} }
-        keys %$resp };
+    $resp = {
+              map { ( my $oid = $_ ) =~ s/^\Q$replset_tbl_base_oid\E\.//; $oid => $resp->{$_} }
+                keys %$resp
+            };
     my @repl;
     foreach my $oid ( keys %$resp )
     {
