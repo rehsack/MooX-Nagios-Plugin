@@ -89,9 +89,10 @@ sub fetch
     my $replset_tbl_base_oid = join( ".", $replset_base_oid,         "7.1" );
     my $resp = $self->session->get_table( -baseoid => $replset_tbl_base_oid );
     $resp or return;
-    $resp =
-      { map { ( my $oid = $_ ) =~ s/^\Q$replset_tbl_base_oid\E\.//; $oid => $resp->{$_} }
-        keys %$resp };
+    $resp = {
+              map { ( my $oid = $_ ) =~ s/^\Q$replset_tbl_base_oid\E\.//; $oid => $resp->{$_} }
+                keys %$resp
+            };
     my @repl;
 
     foreach my $oid ( keys %$resp )
@@ -110,99 +111,50 @@ sub fetch
 
     my ( $me, $master ) = @$resp{ '4', '5' };
     my @primaries = grep { $_ and $_->[2] eq $master } @repl;
-    my @secondaries = grep { $_ and $_->[2] ne $master and $_->[5] ne "ARBITER" } @repl;
+    my @secondaries = grep { $_ and $_->[5] eq "SECONDARY" } @repl;
     scalar(@primaries) != 1
       and die "Amount of primaries != 1 - " . join( ", ", map { $_->[2] } @primaries );
-    scalar(@secondaries) != 1
-      and die "Amount of secondaries != 1 - " . join( ", ", map { $_->[2] } @secondaries );
 
-    push( @values, [ @primaries, @secondaries ] );
-    foreach my $rh (@repl)
-    {
-        if ( defined( $rh->[7] ) )
-        {
-            my $perf_name = 'optime_' . $rh->[2];
-            $perf_name =~ s/\W/_/g;
-            push(
-                  @values,
-                  [
-                     $perf_name,
-                     Threshold::Time->new_with_params(
-                                                       value => $rh->[7],
-                                                       unit  => "ms"
-                                                     ),
-                     $rh->[8] // 0
-                  ]
-                );
-        }
+    # find me
+    my $me_set = ( grep { $_->[2] eq $me } @repl )[0];
+    $me_set or return;
+    $me_set->[7] //= 0;
+    $me_set->[2] =~ s/\W/_/g;
 
-        if ( defined( $rh->[10] ) )
-        {
-            my $perf_name = 'last_heartbeat_' . $rh->[2];
-            $perf_name =~ s/\W/_/g;
-            push(
-                  @values,
-                  [
-                     $perf_name,
-                     Threshold::Time->new_with_params(
-                                                       value => $rh->[10],
-                                                       unit  => "ms"
-                                                     )
-                  ]
-                );
-        }
-    }
+    @values = (
+                Threshold::Time->new_with_params(
+                                                  value => $primaries[0][7] - $me_set->[7],
+                                                  unit  => "ms"
+                                                )
+              );
+    push(
+          @values,
+	  [
+             "opsync_" . $me_set->[2],
+             Threshold::Time->new_with_params(
+                                               value => $primaries[0][7] - $me_set->[7],
+                                               unit  => "ms"
+                                             ),
+             $self->warn->update_unit( unit => "ms" ), $self->crit->update_unit( unit => "ms" )
+	  ],
+          [
+             "optime_" . $me_set->[2],
+             Threshold::Time->new_with_params(
+                                               value => $me_set->[7],
+                                               unit  => "ms"
+                                             ),
+             $me_set->[8] // 0
+          ]
+        );
 
     $self->message(
                     sprintf(
                              '%d operations last %sms since sync',
-                             $secondaries[0][8],
-                             $secondaries[0][10] - $secondaries[0][7]
+                             $me_set->[8] // 0, $primaries[0][7] - $me_set->[7]
                            )
                   );
 
     return \@values;
-}
-
-=method aprove
-
-Individual approve method checking the time difference between
-the heartbeat timestamp and the optime timestamp of the secondary
-node and the optime timestamp difference between the primary
-node and the secondary node.
-
-Both differences must be lower than the warning or critical threshold.
-
-=cut
-
-sub approve
-{
-    my ( $self, @values ) = @_;
-
-    my ( $primary, $secondary ) = @{ shift @values };
-    if ( $secondary->[8] )
-    {
-        my $heartbeat_diff =
-          Threshold::Time->new_with_params( value => $secondary->[10] - $secondary->[7],
-                                            unit  => "ms" );
-        my $optime_diff =
-          Threshold::Time->new_with_params( value => $primary->[7] - $secondary->[7],
-                                            unit  => "ms" );
-
-        $heartbeat_diff > $self->crit
-          and return $self->critical(@values);
-
-        $optime_diff > $self->crit
-          and return $self->critical(@values);
-
-        $heartbeat_diff > $self->warn
-          and return $self->warning(@values);
-
-        $optime_diff > $self->warn
-          and return $self->warning(@values);
-    }
-
-    return;
 }
 
 1;
