@@ -1,7 +1,0 @@
-#!perl
-
-# ABSTRACT: CLI stub for App::Nagios::Plugin
-# PODNAME: apdex
-
-use App::Nagios::Plugin;
-exit App::Nagios::Plugin->run();
