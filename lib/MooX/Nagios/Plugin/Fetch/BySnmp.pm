@@ -51,51 +51,44 @@ sub _build_snmp_community { "public" }
 # XXX: v3 args ...
 
 has 'session' => (
-    is       => 'ro',
-    builder  => '_snmp_connect',
+    is       => 'lazy',
     init_arg => undef,
     lazy     => 1
 );
 
 has 'server_type' => (
-    is       => 'ro',
-    builder  => '_snmp_server_type',
+    is       => 'lazy',
     init_arg => undef,
-    lazy     => 1
 );
 
 has 'smart_snmpd_ident' => (
     isa      => Str,
     is       => 'ro',
-    default  => 'Smart-SNMPd',
+    default  => sub { 'Smart-SNMPd' },
     init_arg => undef,
-    lazy     => 1
 );
 
 has 'net_snmpd_ident' => (
     isa      => Str,
     is       => 'ro',
-    default  => 'net-snmpd',
+    default  => sub { 'net-snmpd' },
     init_arg => undef,
-    lazy     => 1
 );
 
 has external_app_base_oid => (
     isa      => Str,
-    is       => 'ro',
-    builder  => '_external_app_base_oid',
+    is       => 'lazy',
     init_arg => undef,
-    lazy     => 1
 );
 
-=method _snmp_connect
+=method _build_session
 
 Connects to specified host on given port using snmp protocol in
 given version.
 
 =cut
 
-sub _snmp_connect
+sub _build_session
 {
     my $self = shift;
     return Net::SNMP->session(
@@ -108,7 +101,7 @@ sub _snmp_connect
     );
 }
 
-=method _snmp_server_type
+=method _build_server_type
 
 Determines snmpd type by fetching SNMPv2-MIB::sysObjectID.0 (.1.3.6.1.2.1.1.2.0)
 and comparing it against known type:
@@ -127,7 +120,7 @@ net-snmpd
 
 =cut
 
-sub _snmp_server_type
+sub _build_server_type
 {
     my $self        = shift;
     my $sysIdentOid = ".1.3.6.1.2.1.1.2.0";
@@ -139,14 +132,14 @@ sub _snmp_server_type
     return $sysIdent;
 }
 
-=method _external_app_base_oid
+=method _build_external_app_base_oid
 
 Builds the default base object identifiet for external applications in known
 snmpd's.
 
 =cut
 
-sub _external_app_base_oid
+sub _build_external_app_base_oid
 {
     my $self = shift;
     $self->validate_snmpd( $self->smart_snmpd_ident );
