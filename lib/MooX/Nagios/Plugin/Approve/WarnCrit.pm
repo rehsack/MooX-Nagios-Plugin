@@ -1,11 +1,11 @@
-package MooseX::Nagios::Plugin::Approve::WarnCrit;
+package MooX::Nagios::Plugin::Approve::WarnCrit;
 
 use strictures;
 use Moose::Role;
 
 # ABSTRACT: nagios plugin role checks with warning and critical
 
-with qw(MooseX::Nagios::Plugin::Approve::Warn MooseX::Nagios::Plugin::Approve::Crit);
+with qw(MooX::Nagios::Plugin::Approve::Warn MooX::Nagios::Plugin::Approve::Crit);
 
 =method approve($prove;@perfdata)
 
@@ -18,8 +18,8 @@ sub approve
 {
     my $self = shift;
     my $rc;
-    $rc = $self->MooseX::Nagios::Plugin::Approve::Crit::approve(@_) and return $rc;
-    $rc = $self->MooseX::Nagios::Plugin::Approve::Warn::approve(@_) and return $rc;
+    $rc = $self->MooX::Nagios::Plugin::Approve::Crit::approve(@_) and return $rc;
+    $rc = $self->MooX::Nagios::Plugin::Approve::Warn::approve(@_) and return $rc;
     return;
 }
 

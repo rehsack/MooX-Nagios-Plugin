@@ -1,4 +1,4 @@
-package MooseX::Nagios::Plugin::Approve::Warn;
+package MooX::Nagios::Plugin::Approve::Warn;
 
 use strictures;
 use Moose::Role;
@@ -9,13 +9,13 @@ requires qw(help_flag);    # ensure MooseX::Getopt is loaded >:-)
 requires 'warning';
 
 has 'warn' => (
-                traits        => [qw(Getopt ThresholdCmp)],
-                isa           => 'Int',
-                is            => 'rw',
-                documentation => 'warn threshold',
-                required      => 1,
-                predicate     => 'has_warn',
-              );
+    traits        => [qw(Getopt ThresholdCmp)],
+    isa           => 'Int',
+    is            => 'rw',
+    documentation => 'warn threshold',
+    required      => 1,
+    predicate     => 'has_warn',
+);
 
 =method approve($prove;@perfdata)
 

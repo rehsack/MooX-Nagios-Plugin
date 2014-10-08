@@ -4,8 +4,7 @@ use strictures;
 
 # ABSTRACT: defines some reasonable threshold types for nagios checks
 
-use MooseX::Types '-declare' =>
-  [qw(Threshold TimeThreshold SizeThreshold RangeThreshold RelativeThreshold)];
+use MooseX::Types '-declare' => [qw(Threshold TimeThreshold SizeThreshold RangeThreshold RelativeThreshold)];
 
 use MooseX::Types::Moose qw(Int Str ArrayRef);
 
@@ -57,10 +56,9 @@ if ( !$@ )
 {
     MooseX::Getopt::OptionTypeMap->add_option_type_to_map( $_, '=s', )
       for (
-            'Threshold::Time',     'Threshold::Size', 'Threshold::Range',
-            'Threshold::Relative', TimeThreshold,     SizeThreshold,
-            RangeThreshold,        RelativeThreshold,
-          );
+        'Threshold::Time', 'Threshold::Size', 'Threshold::Range', 'Threshold::Relative',
+        TimeThreshold,     SizeThreshold,     RangeThreshold,     RelativeThreshold,
+      );
 }
 
 {
@@ -118,11 +116,11 @@ if ( !$@ )
         }
 
         defined($result)
-          or croak(   "\$self("
-                    . join( ", ", grep { defined $self->{$_} } qw(percent) )
-                    . ") and \$other("
-                    . join( ", ", grep { defined $self->{$_} } qw(percent) )
-                    . ") have no common comparable attributes" );
+          or croak( "\$self("
+              . join( ", ", grep { defined $self->{$_} } qw(percent) )
+              . ") and \$other("
+              . join( ", ", grep { defined $self->{$_} } qw(percent) )
+              . ") have no common comparable attributes" );
 
         return $result;
     }
@@ -152,12 +150,12 @@ if ( !$@ )
     use Carp qw/croak/;
 
     my %unit_sizes = (
-                       'k' => 1024,
-                       'm' => 1024 * 1024,
-                       'g' => 1024 * 1024 * 1024,
-                       't' => 1024 * 1024 * 1024 * 1024,
-                       'p' => 1024 * 1024 * 1024 * 1024 * 1024,
-                     );
+        'k' => 1024,
+        'm' => 1024 * 1024,
+        'g' => 1024 * 1024 * 1024,
+        't' => 1024 * 1024 * 1024 * 1024,
+        'p' => 1024 * 1024 * 1024 * 1024 * 1024,
+    );
     my $rx_str = join( '|', map { $_, uc $_ } keys %unit_sizes );
 
     sub new
@@ -217,11 +215,11 @@ if ( !$@ )
         }
 
         defined($result)
-          or croak(   "\$self("
-                    . join( ", ", grep { defined $self->{$_} } qw(size unit percent) )
-                    . ") and \$other("
-                    . join( ", ", grep { defined $self->{$_} } qw(size unit percent) )
-                    . ") have no common comparable attributes" );
+          or croak( "\$self("
+              . join( ", ", grep { defined $self->{$_} } qw(size unit percent) )
+              . ") and \$other("
+              . join( ", ", grep { defined $self->{$_} } qw(size unit percent) )
+              . ") have no common comparable attributes" );
 
         return $result;
     }
@@ -253,15 +251,15 @@ if ( !$@ )
     use Carp qw/croak/;
 
     my %unit_sizes = (
-                       'ns'  => 1,
-                       'µs' => 1000,
-                       'ms'  => 1000 * 1000,
-                       's'   => 1000 * 1000 * 1000,
-                       'm'   => 60 * 1000 * 1000 * 1000,
-                       'h'   => 60 * 60 * 1000 * 1000 * 1000,
-                       'd'   => 24 * 60 * 60 * 1000 * 1000 * 1000,
-                       'w'   => 7 * 24 * 60 * 60 * 1000 * 1000 * 1000,
-                     );
+        'ns'  => 1,
+        'µs' => 1000,
+        'ms'  => 1000 * 1000,
+        's'   => 1000 * 1000 * 1000,
+        'm'   => 60 * 1000 * 1000 * 1000,
+        'h'   => 60 * 60 * 1000 * 1000 * 1000,
+        'd'   => 24 * 60 * 60 * 1000 * 1000 * 1000,
+        'w'   => 7 * 24 * 60 * 60 * 1000 * 1000 * 1000,
+    );
     my $rx_str = join( '|', map { $_, uc $_ } keys %unit_sizes );
 
     sub new
@@ -274,9 +272,10 @@ if ( !$@ )
 
         for my $arg (@args)
         {
-            $arg =~ m/^(\d+)($rx_str)?$/ and return
-              $class->new_with_params( value => $1,
-                                       unit  => $2 );
+            $arg =~ m/^(\d+)($rx_str)?$/ and return $class->new_with_params(
+                value => $1,
+                unit  => $2
+            );
 
             croak "Invalid time value: '$arg'";
         }
@@ -302,7 +301,7 @@ if ( !$@ )
     sub update_unit
     {
         my ( $self, %params ) = @_;
-        my $value = $self ->${ \overload::Method( $self, '0+' ) };    # $this->operator 0+ ()
+        my $value = $self->${ \overload::Method( $self, '0+' ) };    # $this->operator 0+ ()
         defined( $params{unit} )                   or $params{unit} = "s";
         defined( $unit_sizes{ lc $params{unit} } ) or $params{unit} = "s";
         $self->{unit_name} = $params{unit};
@@ -327,11 +326,11 @@ if ( !$@ )
         }
 
         defined($result)
-          or croak(   "\$self("
-                    . join( ", ", grep { defined $self->{$_} } qw(duration unit) )
-                    . ") and \$other("
-                    . join( ", ", grep { defined $self->{$_} } qw(duration unit) )
-                    . ") have no common comparable attributes" );
+          or croak( "\$self("
+              . join( ", ", grep { defined $self->{$_} } qw(duration unit) )
+              . ") and \$other("
+              . join( ", ", grep { defined $self->{$_} } qw(duration unit) )
+              . ") have no common comparable attributes" );
 
         return $result;
     }

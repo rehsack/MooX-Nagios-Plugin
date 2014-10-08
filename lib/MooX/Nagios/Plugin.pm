@@ -1,4 +1,4 @@
-package MooseX::Nagios::Plugin;
+package MooX::Nagios::Plugin;
 
 use strictures;
 use Moose::Role;
@@ -10,25 +10,25 @@ requires 'fetch';
 requires qw(help_flag);    # ensure MooseX::Getopt is loaded >:-)
 
 has 'alarm_timeout' => (
-                         traits        => [qw(Getopt)],
-                         isa           => 'Int',
-                         is            => 'rw',
-                         cmd_flag      => 'alarm-timeout',
-                         documentation => 'alarm timeout in seconds',
-                         builder       => 'default_alarm_timeout',
-                         required      => 1,
-                       );
+    traits        => [qw(Getopt)],
+    isa           => 'Int',
+    is            => 'rw',
+    cmd_flag      => 'alarm-timeout',
+    documentation => 'alarm timeout in seconds',
+    builder       => 'default_alarm_timeout',
+    required      => 1,
+);
 
 sub default_alarm_timeout { 45 }
 
 has 'plugin_name' => (
-                       traits   => [qw(NoGetopt)],
-                       isa      => 'Str',
-                       is       => 'ro',
-                       init_arg => undef,
-                       builder  => '_plugin_name',
-                       required => 1,
-                     );
+    traits   => [qw(NoGetopt)],
+    isa      => 'Str',
+    is       => 'ro',
+    init_arg => undef,
+    builder  => '_plugin_name',
+    required => 1,
+);
 
 =method _plugin_name
 
@@ -46,19 +46,19 @@ sub _plugin_name
 }
 
 has 'message' => (
-                   traits   => [qw(NoGetopt)],
-                   isa      => 'Str',
-                   is       => 'rw',
-                   init_arg => undef,
-                 );
+    traits   => [qw(NoGetopt)],
+    isa      => 'Str',
+    is       => 'rw',
+    init_arg => undef,
+);
 
 my %nagios_codes = (
-                     OK        => 0,
-                     WARNING   => 1,
-                     CRITICAL  => 2,
-                     UNKNOWN   => 3,
-                     DEPENDENT => 4,
-                   );
+    OK        => 0,
+    WARNING   => 1,
+    CRITICAL  => 2,
+    UNKNOWN   => 3,
+    DEPENDENT => 4,
+);
 
 sub _fmt_perf_data
 {
@@ -161,7 +161,7 @@ Provides the execute method required by App::Cmd. It executes the
 C<fetch> method provided by the plugin encompassed by an alarm timer.
 
 The fetched values are passed to the approve method which is either
-provided by specific roles (eg. L<MooseX::Nagios::Plugin::Approve::Warn>)
+provided by specific roles (eg. L<MooX::Nagios::Plugin::Approve::Warn>)
 or by the command plugin, if individual checks are required.
 
 Any catched exception leads directly to an UNKNOWN state.

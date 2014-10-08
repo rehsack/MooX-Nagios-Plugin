@@ -6,20 +6,19 @@ use Moose;
 
 extends qw(MooseX::App::Cmd::Command);
 
-with qw(MooseX::Nagios::Plugin::Fetch::MongoBySnmp MooseX::Nagios::Plugin::Approve::WarnCrit),
-  qw(MooseX::Nagios::Plugin);
+with qw(MooX::Nagios::Plugin::Fetch::MongoBySnmp MooX::Nagios::Plugin::Approve::WarnCrit), qw(MooX::Nagios::Plugin);
 
 # ABSTRACT: plugin to check query time of snmpd plugin for mongodb
 
 has '+crit' => (
-                 isa    => 'Threshold::Time',
-                 coerce => 1,
-               );
+    isa    => 'Threshold::Time',
+    coerce => 1,
+);
 
 has '+warn' => (
-                 isa    => 'Threshold::Time',
-                 coerce => 1,
-               );
+    isa    => 'Threshold::Time',
+    coerce => 1,
+);
 
 =method description
 
@@ -63,22 +62,17 @@ sub fetch
 
     my $query_time = $resp->{$query_time_oid};
     push(
-          @values,
-          Threshold::Time->new_with_params(
-                                            value => $query_time,
-                                            unit  => "ns"
-            )->update_unit(
-                            unit => "ms",
-                            fmt  => "%0.6fms"
-                          )
-        );
-    push(
-          @values,
-          [
-             "querytime", $values[0],
-             $self->warn->update_unit( unit => "ms" ), $self->crit->update_unit( unit => "ms" )
-          ]
-        );
+        @values,
+        Threshold::Time->new_with_params(
+            value => $query_time,
+            unit  => "ns"
+          )->update_unit(
+            unit => "ms",
+            fmt  => "%0.6fms"
+          )
+    );
+    push( @values,
+        [ "querytime", $values[0], $self->warn->update_unit( unit => "ms" ), $self->crit->update_unit( unit => "ms" ) ] );
 
     $self->message( "" . $values[0] );
 

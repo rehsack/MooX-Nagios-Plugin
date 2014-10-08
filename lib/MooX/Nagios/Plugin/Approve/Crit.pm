@@ -1,4 +1,4 @@
-package MooseX::Nagios::Plugin::Approve::Crit;
+package MooX::Nagios::Plugin::Approve::Crit;
 
 use strictures;
 use Moose::Role;
@@ -9,13 +9,13 @@ requires qw(help_flag);    # ensure MooseX::Getopt is loaded >:-)
 requires 'critical';
 
 has 'crit' => (
-                traits        => [qw(Getopt ThresholdCmp)],
-                isa           => 'Int',
-                is            => 'rw',
-                documentation => 'crit threshold',
-                required      => 1,
-                predicate     => 'has_crit',
-              );
+    traits        => [qw(Getopt ThresholdCmp)],
+    isa           => 'Int',
+    is            => 'rw',
+    documentation => 'crit threshold',
+    required      => 1,
+    predicate     => 'has_crit',
+);
 
 =method approve($prove;@perfdata)
 

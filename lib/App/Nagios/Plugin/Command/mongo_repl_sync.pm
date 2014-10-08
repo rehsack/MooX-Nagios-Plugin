@@ -6,20 +6,19 @@ use Moose;
 
 extends qw(MooseX::App::Cmd::Command);
 
-with qw(MooseX::Nagios::Plugin::Fetch::MongoBySnmp MooseX::Nagios::Plugin::Approve::WarnCrit),
-  qw(MooseX::Nagios::Plugin);
+with qw(MooX::Nagios::Plugin::Fetch::MongoBySnmp MooX::Nagios::Plugin::Approve::WarnCrit), qw(MooX::Nagios::Plugin);
 
 # ABSTRACT: plugin to check synchronisation lag of mongodb replicata set
 
 has '+crit' => (
-                 isa    => 'Threshold::Time',
-                 coerce => 1,
-               );
+    isa    => 'Threshold::Time',
+    coerce => 1,
+);
 
 has '+warn' => (
-                 isa    => 'Threshold::Time',
-                 coerce => 1,
-               );
+    isa    => 'Threshold::Time',
+    coerce => 1,
+);
 
 =method description
 
@@ -89,9 +88,9 @@ sub fetch
     my $resp = $self->session->get_table( -baseoid => $replset_tbl_base_oid );
     $resp or return;
     $resp = {
-              map { ( my $oid = $_ ) =~ s/^\Q$replset_tbl_base_oid\E\.//; $oid => $resp->{$_} }
-                keys %$resp
-            };
+        map { ( my $oid = $_ ) =~ s/^\Q$replset_tbl_base_oid\E\.//; $oid => $resp->{$_} }
+          keys %$resp
+    };
     my @repl;
 
     foreach my $oid ( keys %$resp )
@@ -102,14 +101,13 @@ sub fetch
     }
     shift @repl;
 
-    $resp = $self->session->get_request(
-                       -varbindlist => [ map { join( ".", $replset_base_oid, $_ ) } qw(2 3 4 5) ] );
+    $resp = $self->session->get_request( -varbindlist => [ map { join( ".", $replset_base_oid, $_ ) } qw(2 3 4 5) ] );
     $resp or return;
     $resp =
       { map { ( my $oid = $_ ) =~ s/^\Q$replset_base_oid\E\.//; $oid => $resp->{$_} } keys %$resp };
 
     my ( $me, $master ) = @$resp{ '4', '5' };
-    my @primaries = grep { $_ and $_->[2] eq $master } @repl;
+    my @primaries   = grep { $_ and $_->[2] eq $master } @repl;
     my @secondaries = grep { $_ and $_->[5] eq "SECONDARY" } @repl;
     scalar(@primaries) != 1
       and die "Amount of primaries != 1 - " . join( ", ", map { $_->[2] } @primaries );
@@ -121,37 +119,33 @@ sub fetch
     $me_set->[2] =~ s/\W/_/g;
 
     @values = (
-                Threshold::Time->new_with_params(
-                                                  value => $primaries[0][7] - $me_set->[7],
-                                                  unit  => "ms"
-                                                )
-              );
+        Threshold::Time->new_with_params(
+            value => $primaries[0][7] - $me_set->[7],
+            unit  => "ms"
+        )
+    );
     push(
-          @values,
-	  [
-             "opsync_" . $me_set->[2],
-             Threshold::Time->new_with_params(
-                                               value => $primaries[0][7] - $me_set->[7],
-                                               unit  => "ms"
-                                             ),
-             $self->warn->update_unit( unit => "ms" ), $self->crit->update_unit( unit => "ms" )
-	  ],
-          [
-             "optime_" . $me_set->[2],
-             Threshold::Time->new_with_params(
-                                               value => $me_set->[7],
-                                               unit  => "ms"
-                                             ),
-             $me_set->[8] // 0
-          ]
-        );
+        @values,
+        [
+            "opsync_" . $me_set->[2],
+            Threshold::Time->new_with_params(
+                value => $primaries[0][7] - $me_set->[7],
+                unit  => "ms"
+            ),
+            $self->warn->update_unit( unit => "ms" ),
+            $self->crit->update_unit( unit => "ms" )
+        ],
+        [
+            "optime_" . $me_set->[2],
+            Threshold::Time->new_with_params(
+                value => $me_set->[7],
+                unit  => "ms"
+            ),
+            $me_set->[8] // 0
+        ]
+    );
 
-    $self->message(
-                    sprintf(
-                             '%d operations last %sms since sync',
-                             $me_set->[8] // 0, $primaries[0][7] - $me_set->[7]
-                           )
-                  );
+    $self->message( sprintf( '%d operations last %sms since sync', $me_set->[8] // 0, $primaries[0][7] - $me_set->[7] ) );
 
     return \@values;
 }

@@ -1,4 +1,4 @@
-package MooseX::Nagios::Plugin::Approve::None;
+package MooX::Nagios::Plugin::Approve::None;
 
 use strictures;
 use Moose::Role;

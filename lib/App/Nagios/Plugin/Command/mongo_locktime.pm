@@ -6,17 +6,17 @@ use Moose;
 
 extends qw(MooseX::App::Cmd::Command);
 
-with qw(MooseX::Nagios::Plugin::Fetch::MongoBySnmp MooseX::Nagios::Plugin::Approve::WarnCrit),
-  qw(MooseX::Nagios::Plugin MooseX::Nagios::Plugin::Type::Threshold);
+with qw(MooX::Nagios::Plugin::Fetch::MongoBySnmp MooX::Nagios::Plugin::Approve::WarnCrit),
+  qw(MooX::Nagios::Plugin MooX::Nagios::Plugin::Type::Threshold);
 
 has '+warn' => (
-                 isa    => 'Threshold::Relative',
-                 coerce => 1,
-               );
+    isa    => 'Threshold::Relative',
+    coerce => 1,
+);
 has '+crit' => (
-                 isa    => 'Threshold::Relative',
-                 coerce => 1,
-               );
+    isa    => 'Threshold::Relative',
+    coerce => 1,
+);
 
 # ABSTRACT: plugin to check locking times of mongodb
 
@@ -69,12 +69,7 @@ sub fetch
     push( @values, Threshold::Relative->new( int( 100 * $times[1] / $times[0] ) ) );
     push( @values, [ "locktime", $values[0], $self->warn, $self->crit ] );
 
-    $self->message(
-                    sprintf(
-                             "%dms of %dms (%2.1f%%) locked",
-                             $times[1], $times[0], 100 * $times[1] / $times[0]
-                           )
-                  );
+    $self->message( sprintf( "%dms of %dms (%2.1f%%) locked", $times[1], $times[0], 100 * $times[1] / $times[0] ) );
 
     return \@values;
 }

@@ -1,4 +1,4 @@
-package MooseX::Nagios::Plugin::Fetch::BySnmp;
+package MooX::Nagios::Plugin::Fetch::BySnmp;
 
 use v5.14;
 use strictures;
@@ -13,82 +13,82 @@ use Net::SNMP;
 use DateTime;
 use DateTime::Duration;
 
-with 'MooseX::Nagios::Plugin::Fetch::Remote';
+with 'MooX::Nagios::Plugin::Fetch::Remote';
 
 requires qw(help_flag);    # ensure MooseX::Getopt is loaded >:-)
 
 sub default_remote_port { 161 }
 
 has 'snmp_version' => (
-                        traits        => [qw(Getopt)],
-                        isa           => enum( [qw(1 2c 3)] ),
-                        is            => 'rw',
-                        cmd_flag      => 'snmp-version',
-                        cmd_aliases   => 'V',
-                        documentation => 'SNMP protocol version to use (1, 2c, 3)',
-                        builder       => 'default_snmp_version',
-                        required      => 1,
-                      );
+    traits        => [qw(Getopt)],
+    isa           => enum( [qw(1 2c 3)] ),
+    is            => 'rw',
+    cmd_flag      => 'snmp-version',
+    cmd_aliases   => 'V',
+    documentation => 'SNMP protocol version to use (1, 2c, 3)',
+    builder       => 'default_snmp_version',
+    required      => 1,
+);
 
 sub default_snmp_version { "2c" }
 
 has 'snmp_community' => (
-                          traits        => [qw(Getopt)],
-                          isa           => 'Str',
-                          is            => 'rw',
-                          cmd_flag      => 'snmp-community',
-                          cmd_aliases   => 'c',
-                          documentation => 'SNMP community name (versions 1 & 2c)',
-                          builder       => 'default_snmp_community',
-                          required      => 1,
-                        );
+    traits        => [qw(Getopt)],
+    isa           => 'Str',
+    is            => 'rw',
+    cmd_flag      => 'snmp-community',
+    cmd_aliases   => 'c',
+    documentation => 'SNMP community name (versions 1 & 2c)',
+    builder       => 'default_snmp_community',
+    required      => 1,
+);
 
 sub default_snmp_community { "public" }
 
 # XXX: v3 args ...
 
 has 'session' => (
-                   traits   => [qw(NoGetopt)],
-                   is       => 'ro',
-                   builder  => '_snmp_connect',
-                   init_arg => undef,
-                   lazy     => 1
-                 );
+    traits   => [qw(NoGetopt)],
+    is       => 'ro',
+    builder  => '_snmp_connect',
+    init_arg => undef,
+    lazy     => 1
+);
 
 has 'server_type' => (
-                       traits   => [qw(NoGetopt)],
-                       is       => 'ro',
-                       builder  => '_snmp_server_type',
-                       init_arg => undef,
-                       lazy     => 1
-                     );
+    traits   => [qw(NoGetopt)],
+    is       => 'ro',
+    builder  => '_snmp_server_type',
+    init_arg => undef,
+    lazy     => 1
+);
 
 has 'smart_snmpd_ident' => (
-                             traits   => [qw(NoGetopt)],
-                             isa      => 'Str',
-                             is       => 'ro',
-                             default  => 'Smart-SNMPd',
-                             init_arg => undef,
-                             lazy     => 1
-                           );
+    traits   => [qw(NoGetopt)],
+    isa      => 'Str',
+    is       => 'ro',
+    default  => 'Smart-SNMPd',
+    init_arg => undef,
+    lazy     => 1
+);
 
 has 'net_snmpd_ident' => (
-                           traits   => [qw(NoGetopt)],
-                           isa      => 'Str',
-                           is       => 'ro',
-                           default  => 'net-snmpd',
-                           init_arg => undef,
-                           lazy     => 1
-                         );
+    traits   => [qw(NoGetopt)],
+    isa      => 'Str',
+    is       => 'ro',
+    default  => 'net-snmpd',
+    init_arg => undef,
+    lazy     => 1
+);
 
 has external_app_base_oid => (
-                               traits   => [qw(NoGetopt)],
-                               isa      => 'Str',
-                               is       => 'ro',
-                               builder  => '_external_app_base_oid',
-                               init_arg => undef,
-                               lazy     => 1
-                             );
+    traits   => [qw(NoGetopt)],
+    isa      => 'Str',
+    is       => 'ro',
+    builder  => '_external_app_base_oid',
+    init_arg => undef,
+    lazy     => 1
+);
 
 =method _snmp_connect
 
@@ -100,15 +100,14 @@ given version.
 sub _snmp_connect
 {
     my $self = shift;
-    return
-      Net::SNMP->session(
-                          -hostname  => $self->host,
-                          -port      => $self->port,
-                          -version   => $self->snmp_version,
-                          -timeout   => $self->timeout,
-                          -retries   => $self->retries,
-                          -community => $self->snmp_community,
-                        );
+    return Net::SNMP->session(
+        -hostname  => $self->host,
+        -port      => $self->port,
+        -version   => $self->snmp_version,
+        -timeout   => $self->timeout,
+        -retries   => $self->retries,
+        -community => $self->snmp_community,
+    );
 }
 
 =method _snmp_server_type
@@ -179,10 +178,7 @@ sub validate_snmpd
 
     my $session = $self->session;
     $self->server_type ~~ @valid_snmpds
-      or die 'SNMP daemon '
-      . $self->server_type
-      . ' not supported, please install '
-      . join( ", ", @valid_snmpds );
+      or die 'SNMP daemon ' . $self->server_type . ' not supported, please install ' . join( ", ", @valid_snmpds );
 
     return 1;
 }

@@ -6,17 +6,17 @@ use Moose;
 
 extends qw(MooseX::App::Cmd::Command);
 
-with qw(MooseX::Nagios::Plugin::Fetch::MongoBySnmp MooseX::Nagios::Plugin::Approve::WarnCrit),
-  qw(MooseX::Nagios::Plugin MooseX::Nagios::Plugin::Type::Threshold);
+with qw(MooX::Nagios::Plugin::Fetch::MongoBySnmp MooX::Nagios::Plugin::Approve::WarnCrit),
+  qw(MooX::Nagios::Plugin MooX::Nagios::Plugin::Type::Threshold);
 
 has '+warn' => (
-                 isa    => 'Threshold::Relative',
-                 coerce => 1,
-               );
+    isa    => 'Threshold::Relative',
+    coerce => 1,
+);
 has '+crit' => (
-                 isa    => 'Threshold::Relative',
-                 coerce => 1,
-               );
+    isa    => 'Threshold::Relative',
+    coerce => 1,
+);
 
 # ABSTRACT: plugin to check connection limit of mongodb instance
 
@@ -74,9 +74,7 @@ sub fetch
     push( @values, [ "connections", $values[0], $self->warn, $self->crit ] );
     push( @values, [ "current", @conn ] );
 
-    $self->message(
-          sprintf( "%d of %d (%2.1f%%) connections", $conn[0], $conn[2], 100 * $conn[0] / $conn[2] )
-    );
+    $self->message( sprintf( "%d of %d (%2.1f%%) connections", $conn[0], $conn[2], 100 * $conn[0] / $conn[2] ) );
 
     return \@values;
 }
