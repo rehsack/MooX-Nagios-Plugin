@@ -1,9 +1,17 @@
 package MooX::Nagios::Plugin::Approve::None;
 
 use strictures;
-use Moose::Role;
+use Moo::Role;
 
-# ABSTRACT: nagios plugin role checks without value approval
+our $VERSION = "0.003";
+
+=head1 NAME
+
+MooX::Nagios::Plugin::Approve::None - nagios plugin role checks without value approval
+
+=head1 DESCRIPTION
+
+=head1 METHODS
 
 =method approve($prove;@perfdata)
 

@@ -1,69 +1,19 @@
-package MooseX::Types::Threshold;
+package Types::Tiny::Thresholds;
 
+use 5.014;
 use strictures;
 
-# ABSTRACT: defines some reasonable threshold types for nagios checks
+our $VERSION = "0.003";
 
-use MooseX::Types '-declare' => [qw(Threshold TimeThreshold SizeThreshold RangeThreshold RelativeThreshold)];
+=head1 NAME
 
-use MooseX::Types::Moose qw(Int Str ArrayRef);
+Types::Tiny::Thresholds - Thresholds by Types::Tiny
 
-class_type('Threshold::Time');
-class_type('Threshold::Size');
-class_type('Threshold::Range');
-class_type('Threshold::Relative');
-
-subtype SizeThreshold,     as 'Threshold::Size';
-subtype RangeThreshold,    as 'Threshold::Range';
-subtype RelativeThreshold, as 'Threshold::Relative';
-subtype TimeThreshold,     as 'Threshold::Time';
-
-for my $type ( 'Threshold::Size', SizeThreshold )
-{
-    coerce $type,
-      from Int,      via { Threshold::Size->new($_) },
-      from Str,      via { Threshold::Size->new($_) },
-      from ArrayRef, via { Threshold::Size->new(@$_) };
-}
-
-for my $type ( 'Threshold::Time', TimeThreshold )
-{
-    coerce $type,
-      from Int,      via { Threshold::Time->new($_) },
-      from Str,      via { Threshold::Time->new($_) },
-      from ArrayRef, via { Threshold::Time->new(@$_) };
-}
-
-for my $type ( 'Threshold::Range', RangeThreshold )
-{
-    coerce $type,
-      from Int,      via { Threshold::Range->new($_) },
-      from Str,      via { Threshold::Range->new($_) },
-      from ArrayRef, via { Threshold::Range->new(@$_) };
-}
-
-for my $type ( 'Threshold::Relative', RelativeThreshold )
-{
-    coerce $type,
-      from Int,      via { Threshold::Relative->new($_) },
-      from Str,      via { Threshold::Relative->new($_) },
-      from ArrayRef, via { Threshold::Relative->new(@$_) };
-}
-
-# optionally add Getopt option type
-eval { require MooseX::Getopt; };
-if ( !$@ )
-{
-    MooseX::Getopt::OptionTypeMap->add_option_type_to_map( $_, '=s', )
-      for (
-        'Threshold::Time', 'Threshold::Size', 'Threshold::Range', 'Threshold::Relative',
-        TimeThreshold,     SizeThreshold,     RangeThreshold,     RelativeThreshold,
-      );
-}
+=cut
 
 {
     package    # hide from cpan
-      Threshold::Relative;
+      Type::Threshold::Relative;
 
     use overload
       '<'   => \&my_lt,
@@ -80,8 +30,8 @@ if ( !$@ )
     {
         my ( $class, @args ) = @_;
         @args = map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ } @args;
-        scalar(@args) >= 1 or croak "Threshold::Size->new('rel[%]')";
-        scalar(@args) <= 1 or croak "Threshold::Size->new('rel[%]')";
+        scalar(@args) >= 1 or croak "Type::Threshold::Relative->new('rel[%]')";
+        scalar(@args) <= 1 or croak "Type::Threshold::Relative->new('rel[%]')";
 
         my $self = bless( {}, $class );
 
@@ -98,7 +48,17 @@ if ( !$@ )
         }
 
         defined( $self->{percent} )
-          or croak("Threshold::Size->new('rel[%]')");
+          or croak("Type::Threshold::Relative->new('rel[%]')");
+
+        return $self;
+    }
+
+    sub new_with_params
+    {
+        my ( $class, %params ) = @_;
+        my $self = bless( {}, $class );
+
+        $self->{percent} = $params{value} || 0;
 
         return $self;
     }
@@ -108,7 +68,7 @@ if ( !$@ )
         my ( $self, $other ) = @_;
         my $result;
 
-        ref($other) or $other = Threshold::Relative->new($other);
+        ref($other) or $other = Type::Threshold::Relative->new($other);
 
         if ( defined( $self->{percent} ) and defined( $other->{percent} ) )
         {
@@ -137,7 +97,7 @@ if ( !$@ )
 
 {
     package    # hide from cpan
-      Threshold::Size;
+      Type::Threshold::Size;
 
     use overload
       '<'   => \&my_lt,
@@ -150,6 +110,7 @@ if ( !$@ )
     use Carp qw/croak/;
 
     my %unit_sizes = (
+        'b' => 1,
         'k' => 1024,
         'm' => 1024 * 1024,
         'g' => 1024 * 1024 * 1024,
@@ -163,8 +124,8 @@ if ( !$@ )
         my ( $class, @args ) = @_;
         scalar(@args) == 1 and !ref( $args[0] ) and $args[0] and @args = split( ",", $args[0] );
         @args = map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ } @args;
-        scalar(@args) >= 1 or croak "Threshold::Size->new('size[unit],rel[%]')";
-        scalar(@args) <= 2 or croak "Threshold::Size->new('size[unit],rel[%]')";
+        scalar(@args) >= 1 or croak "Type::Threshold::Size->new('size[unit],rel[%]')";
+        scalar(@args) <= 2 or croak "Type::Threshold::Size->new('size[unit],rel[%]')";
 
         my $self = bless( {}, $class );
 
@@ -192,7 +153,25 @@ if ( !$@ )
 
         defined( $self->{size} )
           or defined( $self->{percent} )
-          or croak("Threshold::Size->new('size[unit],rel[%]')");
+          or croak("Type::Threshold::Size->new('size[unit],rel[%]')");
+
+        $self->{compare_modificator} = 1;
+
+        return $self;
+    }
+
+    sub new_with_params
+    {
+        my ( $class, %params ) = @_;
+        my $self = bless( {}, $class );
+
+        $self->{size} = $params{value} || 0;
+        defined( $params{unit} )                   or $params{unit} = "b";
+        defined( $unit_sizes{ lc $params{unit} } ) or $params{unit} = "b";
+        $self->{unit_name}           = $params{unit};
+        $self->{unit}                = $unit_sizes{ lc $self->{unit_name} };
+        $self->{fmt}                 = $params{fmt} || "%d" . $self->{unit_name};
+        $self->{compare_modificator} = $params{compare_modificator} // 1;
 
         return $self;
     }
@@ -202,7 +181,7 @@ if ( !$@ )
         my ( $self, $other ) = @_;
         my $result;
 
-        ref($other) or $other = Threshold::Size->new($other);
+        ref($other) or $other = Type::Threshold::Size->new($other);
 
         if ( defined( $self->{percent} ) and defined( $other->{percent} ) )
         {
@@ -221,7 +200,7 @@ if ( !$@ )
               . join( ", ", grep { defined $self->{$_} } qw(size unit percent) )
               . ") have no common comparable attributes" );
 
-        return $result;
+        return $self->{compare_modificator} * $result;
     }
 
     sub my_lt { return $_[0]->compare( $_[1] ) < 0; }
@@ -236,7 +215,7 @@ if ( !$@ )
 
 {
     package    # hide from cpan
-      Threshold::Time;
+      Type::Threshold::Time;
 
     use overload
       '<'   => \&my_lt,
@@ -267,20 +246,21 @@ if ( !$@ )
         my ( $class, @args ) = @_;
         scalar(@args) == 1 and !ref( $args[0] ) and $args[0] and @args = split( ",", $args[0] );
         @args = map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ } @args;
-        scalar(@args) >= 1 or croak "Threshold::Time->new('time[unit]')";
-        scalar(@args) <= 1 or croak "Threshold::Time->new('time[unit]')";
+        scalar(@args) >= 1 or croak "Type::Threshold::Time->new('time[unit]')";
+        scalar(@args) <= 1 or croak "Type::Threshold::Time->new('time[unit]')";
 
         for my $arg (@args)
         {
             $arg =~ m/^(\d+)($rx_str)?$/ and return $class->new_with_params(
-                value => $1,
-                unit  => $2
+                value               => $1,
+                unit                => $2,
+                compare_modificator => 1,
             );
 
             croak "Invalid time value: '$arg'";
         }
 
-        croak("Threshold::Time->new('time[unit]')");
+        croak("Type::Threshold::Time->new('time[unit]')");
     }
 
     sub new_with_params
@@ -291,9 +271,10 @@ if ( !$@ )
         $self->{duration} = $params{value} || 0;
         defined( $params{unit} )                   or $params{unit} = "s";
         defined( $unit_sizes{ lc $params{unit} } ) or $params{unit} = "s";
-        $self->{unit_name} = $params{unit};
-        $self->{unit}      = $unit_sizes{ lc $self->{unit_name} };
-        $self->{fmt}       = $params{fmt} || "%d" . $self->{unit_name};
+        $self->{unit_name}           = $params{unit};
+        $self->{unit}                = $unit_sizes{ lc $self->{unit_name} };
+        $self->{fmt}                 = $params{fmt} || "%d" . $self->{unit_name};
+        $self->{compare_modificator} = $params{compare_modificator} // 1;
 
         return $self;
     }
@@ -317,7 +298,7 @@ if ( !$@ )
         my ( $self, $other ) = @_;
         my $result;
 
-        ref($other) or $other = Threshold::Time->new($other);
+        ref($other) or $other = Type::Threshold::Time->new($other);
 
         if ( defined( $self->{duration} ) and defined( $other->{duration} ) )
         {
@@ -332,7 +313,7 @@ if ( !$@ )
               . join( ", ", grep { defined $self->{$_} } qw(duration unit) )
               . ") have no common comparable attributes" );
 
-        return $result;
+        return $self->{compare_modificator} * $result;
     }
 
     sub my_lt { return $_[0]->compare( $_[1] ) < 0; }
@@ -345,61 +326,97 @@ if ( !$@ )
     1;
 }
 
-{
-    package    # hide from cpan
-      Threshold::Range;
+#{
+#    package    # hide from cpan
+#	Type::Threshold::Range;
+#
+#    use overload
+#	'<'   => \&my_lt,
+#	'<='  => \&my_le,
+#	'=='  => \&my_eq,
+#	'!='  => \&my_ne,
+#	'>'   => \&my_gt,
+#	'>='  => \&my_ge,
+#	'<=>' => \&compare;
+#    use Carp qw/croak/;
+#
+#    sub new
+#    {
+#	my ( $class, @args ) = @_;
+#	scalar(@args) == 1 and !ref( $args[0] ) and $args[0] and @args = split( ":", $args[0] );
+#	scalar(@args) == 1 and 'ARRAY' eq ref( $args[0] ) and @args = @{ $args[0] };
+#	@args = map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ } @args;
+#	scalar(@args) >= 1 or croak "Type::Threshold::Range->new('[min]:[max]')";
+#	scalar(@args) <= 2 or croak "Type::Threshold::Range->new('[min]:[max]')";
+#
+#	my $self = bless( {}, $class );
+#
+#	for my $arg (@args)
+#	{
+#	    if ( $arg =~ m/^(\d+)$/ )
+#	    {
+#		$arg = $1;
+#	    }
+#	    elsif ( !$arg )
+#	    {
+#		$arg = undef;
+#	    }
+#	    else
+#	    {
+#		croak "Not a number: '$arg'";
+#	    }
+#	}
+#
+#	$self->{min} = $args[0];
+#	$self->{max} = $args[1];
+#
+#	defined( $self->{min} )
+#	    or defined( $self->{max} )
+#	    or croak("Neither min nor max for range in Type::Threshold::Range->new('[min]:[max]')");
+#
+#	defined $self->{min}
+#	and defined $self->{max}
+#	and $self->{min} > $self->{max}
+#	and $self->{negated} = 1;
+#
+#	return $self;
+#    }
+#}
 
-    use overload
-      '<'   => \&my_lt,
-      '<='  => \&my_le,
-      '=='  => \&my_eq,
-      '!='  => \&my_ne,
-      '>'   => \&my_gt,
-      '>='  => \&my_ge,
-      '<=>' => \&compare;
-    use Carp qw/croak/;
+use Type::Library
+  -base,
+  -declare => qw(TimeThreshold TimeThresholdHash SizeThresholdHash SizeThreshold RelativeThreshold);
+use Type::Utils;
+use Types::Standard -types;
 
-    sub new
-    {
-        my ( $class, @args ) = @_;
-        scalar(@args) == 1 and !ref( $args[0] ) and $args[0] and @args = split( ":", $args[0] );
-        scalar(@args) == 1 and 'ARRAY' eq ref( $args[0] ) and @args = @{ $args[0] };
-        @args = map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ } @args;
-        scalar(@args) >= 1 or croak "Threshold::Range->new('[min]:[max]')";
-        scalar(@args) <= 2 or croak "Threshold::Range->new('[min]:[max]')";
+class_type TimeThreshold,     { class => 'Type::Threshold::Time' };
+class_type SizeThreshold,     { class => 'Type::Threshold::Size' };
+class_type RelativeThreshold, { class => 'Type::Threshold::Relative' };
 
-        my $self = bless( {}, $class );
+declare TimeThresholdHash,
+  as Dict [
+    value               => Int,
+    unit                => Optional [Str],
+    fmt                 => Optional [Str],
+    compare_modificator => Optional [Int],
+  ];
 
-        for my $arg (@args)
-        {
-            if ( $arg =~ m/^(\d+)$/ )
-            {
-                $arg = $1;
-            }
-            elsif ( !$arg )
-            {
-                $arg = undef;
-            }
-            else
-            {
-                croak "Not a number: '$arg'";
-            }
-        }
+declare SizeThresholdHash,
+  as Dict [
+    value               => Int,
+    unit                => Optional [Str],
+    fmt                 => Optional [Str],
+    compare_modificator => Optional [Int],
+  ];
 
-        $self->{min} = $args[0];
-        $self->{max} = $args[1];
+coerce TimeThreshold,
+  from Int, via { "Type::Threshold::Time"->new_with_params( value => $_ ) },
+  from Str, via { "Type::Threshold::Time"->new($_) },
+  from TimeThresholdHash, via { "Type::Threshold::Time"->new_with_params(%$_) };
 
-        defined( $self->{min} )
-          or defined( $self->{max} )
-          or croak("Neither min nor max for range in Threshold::Range->new('[min]:[max]')");
-
-              defined $self->{min}
-          and defined $self->{max}
-          and $self->{min} > $self->{max}
-          and $self->{negated} = 1;
-
-        return $self;
-    }
-}
+coerce SizeThreshold,
+  from Int, via { "Type::Threshold::Size"->new_with_params( value => $_ ) },
+  from Str, via { "Type::Threshold::Size"->new($_) },
+  from SizeThresholdHash, via { "Type::Threshold::Size"->new_with_params(%$_) };
 
 1;

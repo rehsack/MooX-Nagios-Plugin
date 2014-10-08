@@ -1,43 +1,50 @@
 package MooX::Nagios::Plugin;
 
 use strictures;
-use Moose::Role;
+use Moo::Role;
 
-# ABSTRACT: Moose extensions to build nagios plugins
+use MooX::Cmd;
+use MooX::Options;
+
+use Types::Standard qw(Int);
+
+our $VERSION = "0.003";
+
+=head1 NAME
+
+MooX::Nagios::Plugin - Moo extensions to build nagios plugins
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+=cut
 
 requires 'approve';
 requires 'fetch';
-requires qw(help_flag);    # ensure MooseX::Getopt is loaded >:-)
 
-has 'alarm_timeout' => (
-    traits        => [qw(Getopt)],
-    isa           => 'Int',
+option alarm_timeout => (
+    isa           => Int,
     is            => 'rw',
-    cmd_flag      => 'alarm-timeout',
     documentation => 'alarm timeout in seconds',
-    builder       => 'default_alarm_timeout',
-    required      => 1,
+    lazy          => 1,
 );
 
-sub default_alarm_timeout { 45 }
+sub _build_alarm_timeout { 45 }
 
 has 'plugin_name' => (
-    traits   => [qw(NoGetopt)],
-    isa      => 'Str',
-    is       => 'ro',
+    is       => 'lazy',
     init_arg => undef,
-    builder  => '_plugin_name',
-    required => 1,
 );
 
-=method _plugin_name
+=method build_plugin_name
 
 builder for attribute C<plugin_name>. Returns the last part
 of the package name.
 
 =cut
 
-sub _plugin_name
+sub _build_plugin_name
 {
     my $class = $_[0];
     ref($class) and $class = ref($class);
@@ -45,9 +52,7 @@ sub _plugin_name
     $class;
 }
 
-has 'message' => (
-    traits   => [qw(NoGetopt)],
-    isa      => 'Str',
+has message => (
     is       => 'rw',
     init_arg => undef,
 );
@@ -190,6 +195,7 @@ sub execute
     if (@errlst)
     {
         $self->message( $errlst[-1] );
+        no warnings 'experimental';
         "alarm" ~~ @errlst and $self->message("alarm timeout");
         return $self->unknown();
     }

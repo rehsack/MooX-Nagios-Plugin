@@ -1,20 +1,29 @@
 package MooX::Nagios::Plugin::Approve::Warn;
 
 use strictures;
-use Moose::Role;
+use Moo::Role;
 
-# ABSTRACT: nagios plugin role checks with warning
+use MooX::Options;
 
-requires qw(help_flag);    # ensure MooseX::Getopt is loaded >:-)
+our $VERSION = "0.003";
+
+=head1 NAME
+
+MooX::Nagios::Plugin::Approve::Warn - nagios plugin role checks with warning
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+=cut
+
 requires 'warning';
+requires 'approve';
 
-has 'warn' => (
-    traits        => [qw(Getopt ThresholdCmp)],
-    isa           => 'Int',
-    is            => 'rw',
-    documentation => 'warn threshold',
-    required      => 1,
-    predicate     => 'has_warn',
+option warn => (
+    is       => 'ro',
+    doc      => 'warn threshold',
+    required => 1,
 );
 
 =method approve($prove;@perfdata)
@@ -24,17 +33,21 @@ invoking $self->warning otherwise.
 
 =cut
 
-sub approve
-{
-    my ( $self, @values ) = @_;
+around approve => sub {
+    my $next  = shift;
+    my $self  = shift;
+    my $state = $self->$next(@_);
 
-    my $value = shift @values;
-    defined $value or return $self->unknown("No data received");
-    $self->has_warn
-      and ( $self->warn <=> $value ) * $self->meta->get_attribute("warn")->compare_modificator <= 0
-      and return $self->warning(@values);
+    unless ( defined $state )
+    {
+        my @values = @_;
+
+        my $value = shift @values;
+        defined $value or return $self->unknown("No data received");
+        ( $self->warn <=> $value ) <= 0 and return $self->warning(@values);
+    }
 
     return;
-}
+};
 
 1;

@@ -1,20 +1,29 @@
 package MooX::Nagios::Plugin::Approve::Crit;
 
 use strictures;
-use Moose::Role;
+use Moo::Role;
 
-# ABSTRACT: nagios plugin role checks with critical
+use MooX::Options;
 
-requires qw(help_flag);    # ensure MooseX::Getopt is loaded >:-)
+our $VERSION = "0.003";
+
+=head1 NAME
+
+MooX::Nagios::Plugin::Approve::Crit - nagios plugin role checks with critical
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+=cut
+
 requires 'critical';
+requires 'approve';
 
-has 'crit' => (
-    traits        => [qw(Getopt ThresholdCmp)],
-    isa           => 'Int',
-    is            => 'rw',
-    documentation => 'crit threshold',
-    required      => 1,
-    predicate     => 'has_crit',
+option crit => (
+    is       => 'ro',
+    doc      => 'crit threshold',
+    required => 1,
 );
 
 =method approve($prove;@perfdata)
@@ -24,17 +33,21 @@ invoking $self->critical otherwise.
 
 =cut
 
-sub approve
-{
-    my ( $self, @values ) = @_;
+around approve => sub {
+    my $next  = shift;
+    my $self  = shift;
+    my $state = $self->$next(@_);
 
-    my $value = shift @values;
-    defined $value or return $self->unknown("No data received");
-    $self->has_crit
-      and ( $self->crit <=> $value ) * $self->meta->get_attribute("crit")->compare_modificator <= 0
-      and return $self->critical(@values);
+    unless ( defined $state )
+    {
+        my @values = @_;
+
+        my $value = shift @values;
+        defined $value or return $self->unknown("No data received");
+        ( $self->crit <=> $value ) <= 0 and return $self->critical(@values);
+    }
 
     return;
-}
+};
 
 1;
